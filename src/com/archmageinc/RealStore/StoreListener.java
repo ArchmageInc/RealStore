@@ -39,6 +39,10 @@ public class StoreListener implements Listener {
 		if(!event.getInventory().getType().equals(InventoryType.CHEST)) 
 			return;
 		
+		//Temporary fix to get around double chest casting errors
+		if(!(event.getInventory().getHolder() instanceof Chest))
+			return;
+		
 		Player player	=	(Player) event.getWhoClicked();
 		Chest chest		=	(Chest) event.getInventory().getHolder();		
 		
