@@ -179,7 +179,11 @@ public class RSExecutor implements CommandExecutor {
 				return true;
 				
 			}
-			
+/**********************************************************
+ * Unknown RealStore Command
+ **********************************************************/
+			plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Unknown RealStore command! Use '/rs help' for more information.");
+			return true;
 		}
 		
 		return false;

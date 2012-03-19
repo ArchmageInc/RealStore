@@ -83,6 +83,7 @@ public class RealStore extends JavaPlugin {
 			Chest chest					=	citr.next();
 			OfflinePlayer owner			=	coffers.get(chest);
 			String world				=	chest.getWorld().getName();
+			//We must use an 'x' at the beginning of location or YAML will think it is a list entry (which would be bad)
 			String location				=	"x"+chest.getLocation().getBlockX()+"x"+chest.getLocation().getBlockY()+"x"+chest.getLocation().getBlockZ();
 			String player				=	owner.getName();
 			config.set("coffers."+location+".world", world);
@@ -119,6 +120,7 @@ public class RealStore extends JavaPlugin {
 			Chest chest				=	citr.next();
 			OfflinePlayer owner		=	stores.get(chest);
 			String world			=	chest.getWorld().getName();
+			//We must use an 'x' at the beginning of location or YAML will think it is a list entry (which would be bad)
 			String location			=	"x"+chest.getLocation().getBlockX()+"x"+chest.getLocation().getBlockY()+"x"+chest.getLocation().getBlockZ();
 			String player			=	owner.getName();
 			Integer defPrice		=	defaultPrices.contains(chest) ? defaultPrices.get(chest) : 1;
@@ -163,10 +165,12 @@ public class RealStore extends JavaPlugin {
 				World world			=	getServer().getWorld(wName);
 				String pName		=	config.getString("coffers."+key+".player");
 				Location chestLoc	=	new Location(world,Double.parseDouble(key.split("x")[1]),Double.parseDouble(key.split("x")[2]),Double.parseDouble(key.split("x")[3]));
+				//The chest was some how missing since we last loaded, don't add it
 				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest))
 					continue;
 				Chest chest				=	(Chest) world.getBlockAt(chestLoc).getState();
 				OfflinePlayer player	=	getServer().getOfflinePlayer(pName);
+				//No offiline player by that name, can't add it
 				if(player==null)
 					continue;
 				if(!addCoffer(player,chest))
@@ -198,11 +202,13 @@ public class RealStore extends JavaPlugin {
 				String pName			=	config.getString("stores."+key+".player");
 				Integer defPrice		=	config.getInt("stores."+key+".default-price");
 				Location chestLoc		=	new Location(world,Double.parseDouble(key.split("x")[1]),Double.parseDouble(key.split("x")[2]),Double.parseDouble(key.split("x")[3]));
+				//The chest was somehow missing since we last loaded, don't add it
 				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest))
 					continue;
 				
 				Chest chest				=	(Chest) world.getBlockAt(chestLoc).getState();
 				OfflinePlayer player	=	getServer().getOfflinePlayer(pName);
+				//No offline player by that name, can't add it
 				if(player==null)
 					continue;
 				
@@ -252,10 +258,10 @@ public class RealStore extends JavaPlugin {
 	}
 	
 	/**
-	 * Sends a message to the player from the system
+	 * Sends messages to the player from the system
 	 * 
 	 * @param player Player the player who should receive the message
-	 * @param msg String the message to send
+	 * @param msg String[] An array of messages to send to the player
 	 */
 	public void sendPlayerMessage(Player player,String[] msgs){
 		if(player!=null){
@@ -266,7 +272,7 @@ public class RealStore extends JavaPlugin {
 	}
 	
 	/**
-	 * Logs a message to the console
+	 * Logs an informational message to the console
 	 * 
 	 * @param msg String the message to log
 	 */
@@ -276,7 +282,7 @@ public class RealStore extends JavaPlugin {
 	}
 	
 	/**
-	 * Logs a warning to the console
+	 * Logs a warning message to the console
 	 * 
 	 * @param msg String the warning to log
 	 */

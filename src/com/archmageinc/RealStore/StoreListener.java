@@ -32,6 +32,16 @@ public class StoreListener implements Listener {
 		plugin	=	instance;
 	}
 	
+	
+	/**
+	 * This Event Handler is the main store interaction. It is responsible for:
+	 * Notifying the player of the prices
+	 * Removing the currency from the player for a purchase
+	 * Placing the purchased item in the player's inventory
+	 * Depositing the spent money in the owner's coffers
+	 * 
+	 * @param event
+	 */
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event){
 		//Don't handle non-player inventory interactions
@@ -80,7 +90,7 @@ public class StoreListener implements Listener {
 		}
 		
 		/**
-		 * By this point the player has clicked on an item in the store
+		 * By this point the player has clicked on an item in a store that is not their own
 		 */
 		
 		MaterialData data	=	event.getCurrentItem().getData();
@@ -186,6 +196,11 @@ public class StoreListener implements Listener {
 		
 	}
 	
+	/**
+	 * This Event Handler is designed to stop people from breaking a store or coffer via the normal means.
+	 * 
+	 * @param event
+	 */
 	@EventHandler
 	public void onBlockDamage(BlockDamageEvent event){
 		if(!(event.getBlock().getState() instanceof Chest))
@@ -212,6 +227,11 @@ public class StoreListener implements Listener {
 		event.setCancelled(true);
 	}
 	
+	/**
+	 * This EventHandler is designed to stop players from opening a coffer that they do not own.
+	 * 
+	 * @param event
+	 */
 	@EventHandler
 	public void onInventoryOpen(InventoryOpenEvent event){
 		if(!event.getInventory().getType().equals(InventoryType.CHEST))
@@ -237,6 +257,14 @@ public class StoreListener implements Listener {
 		event.setCancelled(true);
 	}
 	
+	/**
+	 * This Event Handler is the primary force in which a player may gain 
+	 * access to a store or coffer that is not theirs.
+	 * NOTE: If the system is unable to remove the store or coffer for any reason,
+	 * This will cancel the event.
+	 * 
+	 * @param event
+	 */
 	@EventHandler
 	public void onEntityExplode(EntityExplodeEvent event){
 		Iterator<Block> itr	=	event.blockList().iterator();
@@ -276,6 +304,12 @@ public class StoreListener implements Listener {
 		}
 	}
 	
+	/**
+	 * This Event Handler is a catch-all for chests and coffers being broken.
+	 * It will remove them from the list and alert the owner, if the owner is online.
+	 * 
+	 * @param event
+	 */
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent event){
 		if(!(event.getBlock().getState() instanceof Chest))
@@ -310,6 +344,14 @@ public class StoreListener implements Listener {
 		}
 	}
 	
+	
+	/**
+	 * This Event Handler is designed to disallow a player from placing a chest near
+	 * An existing store or coffer. Because DoubleChests are not being properly
+	 * Handled at the moment.
+	 * 
+	 * @param event
+	 */
 	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent event){
 		//We don't care about non-chests

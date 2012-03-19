@@ -169,7 +169,7 @@ public abstract class Currency {
 	}
 	
 	/**
-	 * Takes a number and converts it to the least number of currency objects
+	 * Takes a number and converts it to the least number of currency objects in a HashMap format
 	 * 
 	 * @param total int The total nugget value to be converted
 	 * @param includeDiamonds boolean True if the return should include diamond currency
@@ -220,6 +220,13 @@ public abstract class Currency {
 		
 	}
 	
+	/**
+	 * Takes a number and converts it to the least number of currency objects in a HashSet format
+	 * 
+	 * @param total int The total nugget value to be converted
+	 * @param includeDiamonds boolean True if the return should include diamond currency
+	 * @return HashSet<ItemStack> the set of currency
+	 */
 	public static HashSet<ItemStack> colorUpSet(Integer total,boolean includeDiamonds){
 		if(total==null)
 			return null;
@@ -328,11 +335,23 @@ public abstract class Currency {
 		}
 		return currency;
 	}
-
+	
+	/**
+	 * A check to see if an ItemStack is a diamond form of currency
+	 * 
+	 * @param item ItemStack The ItemStack to check
+	 * @return boolean True if the item is a diamond form of currency, false otherwise
+	 */
 	public static boolean isDiamond(ItemStack item){
 		return (item.getType().equals(Material.DIAMOND) || item.getType().equals(Material.DIAMOND_BLOCK));
 	}
 	
+	/**
+	 * A check to see if a currency map contains diamond currency
+	 * 
+	 * @param currency HashMap<Integer,ItemStack> the currency map to check
+	 * @return boolean True if the currency contains diamond currency, false otherwise
+	 */
 	public static boolean hasDiamond(HashMap<Integer,ItemStack> currency){
 		Iterator<ItemStack> itr	=	currency.values().iterator();
 		while(itr.hasNext()){

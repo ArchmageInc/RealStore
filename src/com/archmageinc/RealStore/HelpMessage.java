@@ -12,7 +12,11 @@ public class HelpMessage {
 		command	=	subcommand==null ? null : subcommand.toLowerCase();
 	}
 	
-	
+	/**
+	 * Gets the message string for this help object. With line break markers as '|'
+	 * 
+	 * @return String the message string with 
+	 */
 	public String getMessage(){
 		String result	=	ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"The command "+command+" was not found!";
 		if(command==null){
