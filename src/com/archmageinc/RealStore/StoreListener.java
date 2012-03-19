@@ -7,12 +7,15 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -304,6 +307,44 @@ public class StoreListener implements Listener {
 					plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Alert! "+ChatColor.WHITE+" One of your coffers has been robbed!");
 				}
 			}
+		}
+	}
+	
+	@EventHandler
+	public void onBlockPlace(BlockPlaceEvent event){
+		//We don't care about non-chests
+		if(!(event.getBlock().getState() instanceof Chest))
+			return;
+		
+		BlockState north	=	event.getBlock().getRelative(BlockFace.NORTH).getState();
+		BlockState east		=	event.getBlock().getRelative(BlockFace.EAST).getState();
+		BlockState south	=	event.getBlock().getRelative(BlockFace.SOUTH).getState();
+		BlockState west		=	event.getBlock().getRelative(BlockFace.WEST).getState();
+		
+		//We don't care if a chest was not placed against another chest
+		if(!(north instanceof Chest) && !(east instanceof Chest) && !(south instanceof Chest) && !(west instanceof Chest))
+			return;
+		
+		if((north instanceof Chest) && (plugin.isCoffer((Chest) north) || plugin.isStore((Chest) north))){
+			plugin.sendPlayerMessage(event.getPlayer(), ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You cannot create a double chest with a store or coffer!");
+			event.setCancelled(true);
+			return;
+		}
+		
+		if((east instanceof Chest) && (plugin.isCoffer((Chest) east) || plugin.isStore((Chest) east))){
+			plugin.sendPlayerMessage(event.getPlayer(), ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You cannot create a double chest with a store or coffer!");
+			event.setCancelled(true);
+			return;
+		}
+		if((south instanceof Chest) && (plugin.isCoffer((Chest) south) || plugin.isStore((Chest) south))){
+			plugin.sendPlayerMessage(event.getPlayer(), ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You cannot create a double chest with a store or coffer!");
+			event.setCancelled(true);
+			return;
+		}
+		if((west instanceof Chest) && (plugin.isCoffer((Chest) west) || plugin.isStore((Chest) west))){
+			plugin.sendPlayerMessage(event.getPlayer(), ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You cannot create a double chest with a store or coffer!");
+			event.setCancelled(true);
+			return;
 		}
 	}
 }

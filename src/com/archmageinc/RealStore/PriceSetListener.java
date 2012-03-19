@@ -48,6 +48,12 @@ public class PriceSetListener implements Listener {
 		
 		Chest chest	=	(Chest) event.getClickedBlock().getState();
 		
+		//DoubleChests are very broken right now
+		if(!(chest.getInventory().getHolder() instanceof Chest)){
+			plugin.sendPlayerMessage(owner, ChatColor.DARK_BLUE+"Warning: "+ChatColor.WHITE+"Double chests cannot be used currently.");
+			return;
+		}
+		
 		if(!plugin.isStore(chest)){
 			plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"That is not a store!");
 			return;			
