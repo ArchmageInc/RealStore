@@ -7,3 +7,9 @@ commands:
     aliases: rs
     description: Begin RealStore interaction. Options are <store>,<price>,<coffer>,<help>
     usage: Use '/rs help' for more information.
+    permission: RealStore.*
+    permission-message: You do not have permission to start RealStore interactions
+permissions:
+  RealStore.*:
+    description: Allows a player to create coffers and stores
+  	default: true

@@ -152,7 +152,7 @@ public class RealStore extends JavaPlugin {
 	private void loadCoffers(){
 		File cofferFile		=	new File(getDataFolder(),cofferFileName);
 		if(!cofferFile.exists()){
-			logWarning("Coffer file does not exist!");
+			logMessage("Coffer file does not exist");
 			return;
 		}
 		
@@ -170,7 +170,7 @@ public class RealStore extends JavaPlugin {
 					continue;
 				Chest chest				=	(Chest) world.getBlockAt(chestLoc).getState();
 				OfflinePlayer player	=	getServer().getOfflinePlayer(pName);
-				//No offiline player by that name, can't add it
+				//No offline player by that name, can't add it
 				if(player==null)
 					continue;
 				if(!addCoffer(player,chest))
@@ -189,7 +189,7 @@ public class RealStore extends JavaPlugin {
 	private void loadStores(){
 		File storeFile		=	new File(getDataFolder(),storeFileName);
 		if(!storeFile.exists()){
-			logWarning("Store file does not exist!");
+			logMessage("Store file does not exist");
 			return;
 		}
 		FileConfiguration config	=	YamlConfiguration.loadConfiguration(storeFile);
@@ -242,7 +242,7 @@ public class RealStore extends JavaPlugin {
 	 * @param rsCommand String The sub command to help with (null for main help)
 	 */
 	public void sendHelpInfo(Player player,String rsCommand){
-		sendPlayerMessage(player,new HelpMessage(this,rsCommand).getMessage().split("\\|"));
+		(new HelpMessage(this,player,rsCommand)).send();
 	}
 	
 	/**

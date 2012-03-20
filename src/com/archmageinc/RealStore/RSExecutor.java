@@ -20,11 +20,16 @@ public class RSExecutor implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label,String[] args){
 		if(cmd.getName().equalsIgnoreCase("rs") || cmd.getName().equalsIgnoreCase("RealStore")){
 			if(!(sender instanceof Player)){
-				plugin.logMessage("The RealStore may only be used by Players!");
+				plugin.logMessage("RealStore interactions may only be used by Players!");
 				return true;
 			}
 			
 			Player player	=	(Player) sender;
+			
+			if(!player.hasPermission("RealStore")){
+				plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to do that.");
+				return true;
+			}
 			
 			if(args.length<1){
 				plugin.sendPlayerMessage(player,ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"No RealStore command found! Please use '/rs help' for proper RealStore usage. ");
@@ -179,6 +184,11 @@ public class RSExecutor implements CommandExecutor {
 				return true;
 				
 			}
+			/**
+			 * TODO: Add a method for store owners to check prices
+			 */
+			
+			
 /**********************************************************
  * Unknown RealStore Command
  **********************************************************/
