@@ -12,4 +12,4 @@ commands:
 permissions:
   RealStore.*:
     description: Allows a player to create coffers and stores
-  	default: true
+    default: true
