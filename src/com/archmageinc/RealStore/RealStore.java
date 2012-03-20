@@ -13,6 +13,7 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -241,7 +242,7 @@ public class RealStore extends JavaPlugin {
 	 * @param player Player the player who should receive the help
 	 * @param rsCommand String The sub command to help with (null for main help)
 	 */
-	public void sendHelpInfo(Player player,String rsCommand){
+	public void sendHelpInfo(CommandSender player,String rsCommand){
 		(new HelpMessage(this,player,rsCommand)).send();
 	}
 	
