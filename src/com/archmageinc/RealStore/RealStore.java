@@ -42,7 +42,7 @@ public class RealStore extends JavaPlugin {
 		initialConfigCheck();
 		currencyManager	=	new Currency(this);
 		if(!currencyManager.allowEnable()){
-			logWarning("The currency manager has blocked RealStore from enabling. Check the config settings for accuracy!");
+			logError("The currency manager has blocked RealStore from enabling. Check the config settings for accuracy!");
 			onDisable();
 			return;
 		}
@@ -288,7 +288,7 @@ public class RealStore extends JavaPlugin {
 	 */
 	public void logMessage(String msg){
 		PluginDescriptionFile pdFile	=	this.getDescription();
-		log.info("["+pdFile.getName()+" "+pdFile.getVersion()+"]: "+msg);
+		log.info("["+pdFile.getName()+" v"+pdFile.getVersion()+"]: "+msg);
 	}
 	
 	/**
@@ -298,7 +298,18 @@ public class RealStore extends JavaPlugin {
 	 */
 	public void logWarning(String msg){
 		PluginDescriptionFile pdFile	=	this.getDescription();
-		log.warning("["+pdFile.getName()+" "+pdFile.getVersion()+"]: "+msg);
+		log.warning("["+pdFile.getName()+" v"+pdFile.getVersion()+"]: "+msg);
+	}
+	
+	/**
+	 * Logs an error message to the console
+	 * 
+	 * @param msg String the error to log
+	 */
+	public void logError(String msg){
+		PluginDescriptionFile pdFile	=	this.getDescription();
+		getServer().getConsoleSender().sendMessage(ChatColor.DARK_RED+"[!!RealStore Error!!]: "+ChatColor.WHITE+msg);
+		log.severe("["+pdFile.getName()+" v"+pdFile.getVersion()+"]: "+msg);
 	}
 	
 	/**

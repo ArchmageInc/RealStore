@@ -21,19 +21,19 @@ public class Currency {
 		plugin	=	instance;
 		List<Integer> currencies	=	plugin.getConfig().getIntegerList("currency");
 		if(currencies==null || currencies.size()==0){
-			plugin.logWarning("Missing currency configuration! Unable to enable!");
+			plugin.logError("Missing currency configuration! Unable to enable!");
 			enable	=	false;
 			return;
 		}
 		String ratios	=	plugin.getConfig().getString("conversion");
 		if(ratios==null){
-			plugin.logWarning("Invalid Currency Conversion setting the the config! Unable to enable!");
+			plugin.logError("Invalid Currency Conversion setting the the config! Unable to enable!");
 			enable	=	false;
 			return;
 		}
 		String[] ratiosA	=	ratios.split(":");
 		if(ratiosA.length<currencies.size()){
-			plugin.logWarning("Currency Conversions do not match the number of currencies! Unable to enable!");
+			plugin.logError("Currency Conversions do not match the number of currencies! Unable to enable!");
 			enable	=	false;
 			return;
 		}
@@ -44,7 +44,7 @@ public class Currency {
 				ratiosI[i]	=	Integer.parseInt(ratio);
 				i++;
 			}catch(NumberFormatException e){
-				plugin.logWarning("Invalid Currency Conversion: "+ratio+"! Unable to enable!");
+				plugin.logError("Invalid Currency Conversion: "+ratio+"! Unable to enable!");
 				enable	=	false;
 				return;
 			}
