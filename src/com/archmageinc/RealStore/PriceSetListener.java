@@ -117,11 +117,14 @@ public class PriceSetListener implements Listener {
 		/**
 		 * Setting Item Price
 		 */
-		if(plugin.setPrice(owner, chest, type, cost))
-			plugin.sendPlayerMessage(owner, ChatColor.GREEN+"Setting the price of "+ChatColor.WHITE+type.toString()+ChatColor.GREEN+" to "+ChatColor.WHITE+cost+ChatColor.GREEN+" gold nuggets for that store.");
-		else
-			plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"Unable to set the price of "+type.toString()+" to "+cost+" for that chest. Try again.");
-		
+		try{
+			if(plugin.setPrice(owner, chest, type, cost))
+				plugin.sendPlayerMessage(owner, ChatColor.GREEN+"Setting the price of "+ChatColor.WHITE+type.toString()+ChatColor.GREEN+" to "+ChatColor.WHITE+cost+ChatColor.GREEN+" gold nuggets for that store.");
+			else
+				plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"Unable to set the price of "+type.toString()+" to "+cost+" for that chest. Try again.");
+		}catch(NullPointerException e){
+			plugin.sendPlayerMessage(owner, ChatColor.GREEN+"Setting the price of "+ChatColor.WHITE+event.getItem().getType().toString()+ChatColor.GREEN+" to "+ChatColor.WHITE+cost+ChatColor.GREEN+" gold nuggets for that store.");
+		}
 		plugin.removeSetting(owner);
 		event.getHandlers().unregister(this);
 	}
