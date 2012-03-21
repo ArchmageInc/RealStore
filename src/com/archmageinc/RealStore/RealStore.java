@@ -33,11 +33,19 @@ public class RealStore extends JavaPlugin {
 	private HashSet<Player> removeSetting								=	new HashSet<Player>();
 	private final String storeFileName									=	"stores";
 	private final String cofferFileName									=	"coffers";
+	private Currency currencyManager;
+	
 	
 	@Override
 	public void onEnable(){
-		log	=	getLogger();
+		log				=	getLogger();
 		initialConfigCheck();
+		currencyManager	=	new Currency(this);
+		if(!currencyManager.allowEnable()){
+			logWarning("The currency manager has blocked RealStore from enabling. Check the config settings for accuracy!");
+			onDisable();
+			return;
+		}
 		loadCoffers();
 		loadStores();
 		getCommand("RealStore").setExecutor(new RSExecutor(this));
@@ -56,9 +64,10 @@ public class RealStore extends JavaPlugin {
 	 */
 	private void initialConfigCheck(){
 		getConfig().options().copyDefaults(true);
-		if(!(new File(getDataFolder(),"config.yml").exists())){
-			logMessage("Saving default configuration file.");
-			saveDefaultConfig();
+		try {
+			getConfig().save(new File(getDataFolder(),"config.yml"));
+		} catch (IOException e) {
+			logWarning("Unable to save configuration file!");
 		}
 	}
 	
@@ -590,6 +599,10 @@ public class RealStore extends JavaPlugin {
 		return 1;
 	}
 	
+	public Currency currencyManager(){
+		return currencyManager;
+	}
+	
 	/**
 	 * Deposits the amount into a player's coffers. If a player's coffers are full
 	 * or the player doesn't have any, the items will spill out somewhere
@@ -608,7 +621,7 @@ public class RealStore extends JavaPlugin {
 		Iterator<Chest> itr				=	coffers.keySet().iterator();
 		
 		//logMessage("There are "+coffers.keySet().size()+" coffers stored");
-		HashSet<ItemStack> currency		=	Currency.colorUpSet(amount, false);
+		HashSet<ItemStack> currency		=	currencyManager.colorUpSet(amount);
 		while(itr.hasNext()){
 			Chest chest	=	itr.next();
 			if(coffers.get(chest).equals(player)){

@@ -1,9 +1,9 @@
 package com.archmageinc.RealStore;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,18 +11,77 @@ import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-public abstract class Currency {
+public class Currency {
 	
-	public static final HashSet<Material> currencyMaterials	=	new HashSet<Material>(Arrays.asList(Material.GOLD_NUGGET,Material.GOLD_INGOT,Material.GOLD_BLOCK,Material.DIAMOND,Material.DIAMOND_BLOCK));
+	private HashMap<Material,Integer> currencyMaterials	=	new HashMap<Material,Integer>();
+	private boolean enable								=	true;
+	private RealStore plugin;
+	
+	public Currency(RealStore instance){
+		plugin	=	instance;
+		List<Integer> currencies	=	plugin.getConfig().getIntegerList("currency");
+		if(currencies==null || currencies.size()==0){
+			plugin.logWarning("Missing currency configuration! Unable to enable!");
+			enable	=	false;
+			return;
+		}
+		String ratios	=	plugin.getConfig().getString("conversion");
+		if(ratios==null){
+			plugin.logWarning("Invalid Currency Conversion setting the the config! Unable to enable!");
+			enable	=	false;
+			return;
+		}
+		String[] ratiosA	=	ratios.split(":");
+		if(ratiosA.length<currencies.size()){
+			plugin.logWarning("Currency Conversions do not match the number of currencies! Unable to enable!");
+			enable	=	false;
+			return;
+		}
+		Integer[] ratiosI	=	new Integer[ratiosA.length];
+		for(int i=0;i<ratiosA.length;i++){
+			String ratio	=	ratiosA[i];
+			try{
+				ratiosI[i]	=	Integer.parseInt(ratio);
+				i++;
+			}catch(NumberFormatException e){
+				plugin.logWarning("Invalid Currency Conversion: "+ratio+"! Unable to enable!");
+				enable	=	false;
+				return;
+			}
+		}
 		
+		currencyMaterials.clear();
+		Iterator<Integer> itr	=	currencies.iterator();
+		int i					=	0;
+		while(itr.hasNext()){
+			Integer currencyId	=	itr.next();
+			Integer ratio		=	ratiosI[i];
+			i++;
+			if(Material.getMaterial(currencyId)==null){
+				plugin.logWarning("Invalid Material ID for currency: "+currencyId+". It will be ignored!");
+				continue;
+			}
+			Material material	=	Material.getMaterial(currencyId);
+			if(currencyMaterials.containsKey(material)){
+				plugin.logWarning("Duplicated material "+material.toString()+" in config! It will be ignored!");
+				continue;
+			}
+			currencyMaterials.put(material,ratio);
+		}
+	}
+	
+	public boolean allowEnable(){
+		return enable;
+	}
+	
 	/**
 	 * Determines if an ItemStack is currency
 	 * 
 	 * @param item ItemStack the stack to check
 	 * @return boolean True if it is, false if it is not
 	 */
-	public static boolean isCurrency(ItemStack item){
-		return currencyMaterials.contains(item.getType());
+	public boolean isCurrency(ItemStack item){
+		return currencyMaterials.containsKey(item.getType());
 	}
 	
 	/**
@@ -31,8 +90,8 @@ public abstract class Currency {
 	 * @param material Material the material to check
 	 * @return boolean True if it is, false if it is not
 	 */
-	public static boolean isCurrency(Material material){
-		return currencyMaterials.contains(material);
+	public boolean isCurrency(Material material){
+		return currencyMaterials.containsKey(material);
 	}
 	
 	/**
@@ -40,24 +99,23 @@ public abstract class Currency {
 	 * 
 	 * @param price int The price of an object
 	 * @param currency ItemStack a stack of currency items
-	 * @param inDiamonds boolean True if change should include diamonds, false if gold only
 	 * @return HashMap<Integer,ItemStack> A map of all of the change or null if not proper
 	 */
-	public static HashMap<Integer,ItemStack> getChange(Integer price,ItemStack currency,boolean inDiamonds){
+	public HashMap<Integer,ItemStack> getChange(Integer price,ItemStack currency){
 		if(price==null || currency==null)
 			return null;
 		if(price<=0)
 			return null;
-		if(!Currency.isCurrency(currency))
+		if(!isCurrency(currency))
 			return null;
 		
-		int value	=	Currency.convertToBase(currency);
+		int value	=	convertToBase(currency);
 		int change	=	value-price;
 		
 		if(change<0)
 			return null;
 		
-		return Currency.colorUp(change,inDiamonds);
+		return colorUp(change);
 		
 	}
 	
@@ -66,22 +124,21 @@ public abstract class Currency {
 	 * 
 	 * @param price int The price of an object
 	 * @param currency HashMap<Object,ItemStack> the map of currency
-	 * @param inDiamonds boolean True if change should include diamonds, false if gold only
 	 * @return HashMap<Integer,ItemStack> A map of all the change or null if not proper
 	 */
-	public static HashMap<Integer,ItemStack> getChange(Integer price,HashMap<Integer,ItemStack> currency,boolean inDiamonds){
+	public HashMap<Integer,ItemStack> getChange(Integer price,HashMap<Integer,ItemStack> currency){
 		if(price==null || currency==null)
 			return null;
 		if(price<=0)
 			return null;
 		
-		int value	=	Currency.convertToBase(currency);
+		int value	=	convertToBase(currency);
 		int change	=	value-price;
 		
 		if(change<0)
 			return null;
 		
-		return Currency.colorUp(change,inDiamonds);
+		return colorUp(change);
 		
 	}
 	
@@ -91,19 +148,20 @@ public abstract class Currency {
 	 * @param currency ItemStack the currency
 	 * @return Integer the total gold nugget value of the currency or null if invalid
 	 */
-	public static Integer convertToBase(ItemStack currency){
+	public Integer convertToBase(ItemStack currency){
 		if(currency==null)
 			return null;
-		if(!Currency.isCurrency(currency))
+		if(!isCurrency(currency))
 			return 0;
-		if(currency.getType().equals(Material.GOLD_NUGGET))
-			return currency.getAmount();
-		if(currency.getType().equals(Material.GOLD_INGOT))
-			return currency.getAmount()*9;
-		if(currency.getType().equals(Material.GOLD_BLOCK) || currency.getType().equals(Material.DIAMOND))
-			return currency.getAmount()*9*9;
-		if(currency.getType().equals(Material.DIAMOND_BLOCK))
-			return currency.getAmount()*9*9*9;
+		
+		Iterator<Material> itr	=	currencyMaterials.keySet().iterator();
+		while(itr.hasNext()){
+			Material material	=	itr.next();
+			Integer conversion	=	currencyMaterials.get(material);
+			if(currency.getType().equals(material)){
+				return currency.getAmount()*conversion;
+			}
+		}
 		
 		return null;
 			
@@ -115,15 +173,15 @@ public abstract class Currency {
 	 * @param currency Set<ItemStack> the set of currency
 	 * @return Integer the total gold nugget value of the set of currency or null if invalid
 	 */
-	public static Integer convertToBase(Set<ItemStack> currency){
+	public Integer convertToBase(Set<ItemStack> currency){
 		if(currency==null)
 			return null;
 		Integer	base			=	0;
 		Iterator<ItemStack> itr	=	currency.iterator();
 		while(itr.hasNext()){
 			ItemStack item	=	itr.next();
-			if(Currency.isCurrency(item))
-				base			+=	Currency.convertToBase(item);
+			if(isCurrency(item))
+				base			+=	convertToBase(item);
 		}
 		
 		return base;
@@ -135,15 +193,15 @@ public abstract class Currency {
 	 * @param currency Map<Obejct,ItemStack> the map of currency
 	 * @return Integer the total gold nugget value of the set of currency or null if invalid
 	 */
-	public static Integer convertToBase(Map<Integer,ItemStack> currency){
+	public Integer convertToBase(Map<Integer,ItemStack> currency){
 		if(currency==null)
 			return null;
 		Integer	base			=	0;
 		Iterator<ItemStack> itr	=	currency.values().iterator();
 		while(itr.hasNext()){
 			ItemStack item	=	itr.next();
-			if(Currency.isCurrency(item))
-				base			+=	Currency.convertToBase(item);
+			if(isCurrency(item))
+				base			+=	convertToBase(item);
 		}
 		
 		return base;
@@ -155,14 +213,14 @@ public abstract class Currency {
 	 * @param currency ItemStack[] the array of currency
 	 * @return Integer the total gold nugget value of the set of currency or null if invalid
 	 */
-	public static Integer convertToBase(ItemStack[] currency){
+	public Integer convertToBase(ItemStack[] currency){
 		if(currency==null)
 			return null;
 		
 		Integer base		=	0;
 		for(ItemStack item : currency){
-			if(Currency.isCurrency(item))
-				base		+=	Currency.convertToBase(item);
+			if(isCurrency(item))
+				base		+=	convertToBase(item);
 		}
 		
 		return base;
@@ -172,48 +230,25 @@ public abstract class Currency {
 	 * Takes a number and converts it to the least number of currency objects in a HashMap format
 	 * 
 	 * @param total int The total nugget value to be converted
-	 * @param includeDiamonds boolean True if the return should include diamond currency
 	 * @return HashMap<Integer,ItemStack> the map of currency
 	 */
-	public static HashMap<Integer,ItemStack> colorUp(Integer total,boolean includeDiamonds){
+	public HashMap<Integer,ItemStack> colorUp(Integer total){
 		if(total==null)
 			return null;
 		
 		HashMap<Integer,ItemStack> items	=	new HashMap<Integer,ItemStack>();
+		Material[] materials				=	(Material[]) currencyMaterials.keySet().toArray();
+		Integer[] ratios					=	(Integer[]) currencyMaterials.values().toArray();
 		
-		if(includeDiamonds && total>=9*9*9){
-			int dblocks	=	0;
-			while(total>=9*9*9){
-				dblocks++;
-				total-=9*9*9;
+		for(int i=materials.length-1;i>=0;i--){
+			Material material	=	materials[i];
+			Integer ratio		=	ratios[i];
+			int itotal			=	0;
+			while(total>=ratio){
+				itotal++;
+				total-=ratio;
 			}
-			items.put(items.size(),new ItemStack(Material.DIAMOND_BLOCK,dblocks));
-		}
-		
-		if(total>=9*9){
-			int diamonds	=	0;
-			while(total>=9*9){
-				diamonds++;
-				total-=9*9;
-			}
-			if(includeDiamonds)
-				items.put(items.size(),new ItemStack(Material.DIAMOND,diamonds));
-			else
-				items.put(items.size(),new ItemStack(Material.GOLD_BLOCK,diamonds));
-		}
-		
-		if(total>=9){
-			int gold		=	0;
-			while(total>=9){
-				gold++;
-				total-=9;
-			}
-			items.put(items.size(),new ItemStack(Material.GOLD_INGOT,gold));
-		}
-		
-		if(total>=1){
-			items.put(items.size(),new ItemStack(Material.GOLD_NUGGET,total));
-			total-=total;
+			items.put(items.size(), new ItemStack(material,itotal));
 		}
 		
 		return items;
@@ -224,48 +259,25 @@ public abstract class Currency {
 	 * Takes a number and converts it to the least number of currency objects in a HashSet format
 	 * 
 	 * @param total int The total nugget value to be converted
-	 * @param includeDiamonds boolean True if the return should include diamond currency
 	 * @return HashSet<ItemStack> the set of currency
 	 */
-	public static HashSet<ItemStack> colorUpSet(Integer total,boolean includeDiamonds){
+	public HashSet<ItemStack> colorUpSet(Integer total){
 		if(total==null)
 			return null;
 		
 		HashSet<ItemStack> items	=	new HashSet<ItemStack>();
+		Material[] materials				=	(Material[]) currencyMaterials.keySet().toArray();
+		Integer[] ratios					=	(Integer[]) currencyMaterials.values().toArray();
 		
-		if(includeDiamonds && total>=9*9*9){
-			int dblocks	=	0;
-			while(total>=9*9*9){
-				dblocks++;
-				total-=9*9*9;
+		for(int i=materials.length-1;i>=0;i--){
+			Material material	=	materials[i];
+			Integer ratio		=	ratios[i];
+			int itotal			=	0;
+			while(total>=ratio){
+				itotal++;
+				total-=ratio;
 			}
-			items.add(new ItemStack(Material.DIAMOND_BLOCK,dblocks));
-		}
-		
-		if(total>=9*9){
-			int diamonds	=	0;
-			while(total>=9*9){
-				diamonds++;
-				total-=9*9;
-			}
-			if(includeDiamonds)
-				items.add(new ItemStack(Material.DIAMOND,diamonds));
-			else
-				items.add(new ItemStack(Material.GOLD_BLOCK,diamonds));
-		}
-		
-		if(total>=9){
-			int gold		=	0;
-			while(total>=9){
-				gold++;
-				total-=9;
-			}
-			items.add(new ItemStack(Material.GOLD_INGOT,gold));
-		}
-		
-		if(total>=1){
-			items.add(new ItemStack(Material.GOLD_NUGGET,total));
-			total-=total;
+			items.add(new ItemStack(material,itotal));
 		}
 		
 		return items;
@@ -276,15 +288,14 @@ public abstract class Currency {
 	 * Gets a value of a price to be output
 	 * 
 	 * @param price int The price to convert
-	 * @param inDiamonds boolean should the string include diamond conversions
 	 * @return String the price as a compiled string
 	 */
-	public static String getValueString(Integer price,boolean inDiamonds){
+	public String getValueString(Integer price){
 		String valueString			=	"";
-		Iterator<ItemStack> itr		=	Currency.colorUp(price,inDiamonds).values().iterator();
+		Iterator<ItemStack> itr		=	colorUp(price).values().iterator();
 		while(itr.hasNext()){
 			ItemStack stack			=	itr.next();
-			valueString				=	valueString+stack.getAmount()+" "+Currency.getCurrencyString(stack)+", ";
+			valueString				=	valueString+stack.getAmount()+" "+getCurrencyString(stack)+", ";
 		}
 		valueString	=	valueString.substring(0, valueString.length()-2);
 		return valueString;
@@ -296,23 +307,14 @@ public abstract class Currency {
 	 * @param currency ItemStack the currency to be converted
 	 * @return String the currency as a string
 	 */
-	public static String getCurrencyString(ItemStack currency){
+	public String getCurrencyString(ItemStack currency){
 		if(currency==null)
 			return null;
-		if(!Currency.isCurrency(currency))
+		if(!isCurrency(currency))
 			return null;
 		
-		if(currency.getType().equals(Material.DIAMOND_BLOCK))
-			return "diamond block"+(currency.getAmount()>1 ? "s" : "");
-		if(currency.getType().equals(Material.DIAMOND))
-			return "diamond"+(currency.getAmount()>1 ? "s" : "");
-		if(currency.getType().equals(Material.GOLD_BLOCK))
-			return "gold block"+(currency.getAmount()>1 ? "s" : "");
-		if(currency.getType().equals(Material.GOLD_INGOT))
-			return "gold ingot"+(currency.getAmount()>1 ? "s" : "");
-		if(currency.getType().equals(Material.GOLD_NUGGET))
-			return "nugget"+(currency.getAmount()>1 ? "s" : "");
-		return null;
+		return currency.getType().toString()+(currency.getAmount()>1 ? "s" : "");
+		
 	}
 	
 	/**
@@ -321,9 +323,9 @@ public abstract class Currency {
 	 * @param inventory Inventory the inventory object to serach
 	 * @return HashMap<Integer,ItemStack> returns the currency items in a map
 	 */
-	public static HashMap<Integer,ItemStack> getCurrency(Inventory inventory){
+	public HashMap<Integer,ItemStack> getCurrency(Inventory inventory){
 		HashMap<Integer,ItemStack> currency	=	new HashMap<Integer,ItemStack>();
-		Iterator<Material> mitr				=	Currency.currencyMaterials.iterator();
+		Iterator<Material> mitr				=	currencyMaterials.keySet().iterator();
 		while(mitr.hasNext()){
 			Material material			=	mitr.next();
 			@SuppressWarnings("unchecked")
@@ -334,32 +336,5 @@ public abstract class Currency {
 			}
 		}
 		return currency;
-	}
-	
-	/**
-	 * A check to see if an ItemStack is a diamond form of currency
-	 * 
-	 * @param item ItemStack The ItemStack to check
-	 * @return boolean True if the item is a diamond form of currency, false otherwise
-	 */
-	public static boolean isDiamond(ItemStack item){
-		return (item.getType().equals(Material.DIAMOND) || item.getType().equals(Material.DIAMOND_BLOCK));
-	}
-	
-	/**
-	 * A check to see if a currency map contains diamond currency
-	 * 
-	 * @param currency HashMap<Integer,ItemStack> the currency map to check
-	 * @return boolean True if the currency contains diamond currency, false otherwise
-	 */
-	public static boolean hasDiamond(HashMap<Integer,ItemStack> currency){
-		Iterator<ItemStack> itr	=	currency.values().iterator();
-		while(itr.hasNext()){
-			ItemStack item	=	itr.next();
-			if(item.getType().equals(Material.DIAMOND) || item.getType().equals(Material.DIAMOND_BLOCK))
-				return true;
-		}
-		
-		return false;
 	}
 }

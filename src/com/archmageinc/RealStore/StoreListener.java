@@ -97,8 +97,8 @@ public class StoreListener implements Listener {
 		Integer price		=	plugin.getPrice(chest, data);
 		
 		//If they didn't click with currency on the cursor, tell them the price
-		if(!Currency.isCurrency(event.getCursor())){
-			plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Cost: "+ChatColor.WHITE+Currency.getValueString(price,false));
+		if(!plugin.currencyManager().isCurrency(event.getCursor())){
+			plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Cost: "+ChatColor.WHITE+plugin.currencyManager().getValueString(price));
 			event.setCancelled(true);
 			return;
 		}
@@ -113,10 +113,10 @@ public class StoreListener implements Listener {
 		event.setCursor(new ItemStack(Material.AIR));
 		*/
 		
-		HashMap<Integer,ItemStack> currency	=	Currency.getCurrency(player.getInventory());
+		HashMap<Integer,ItemStack> currency	=	plugin.currencyManager().getCurrency(player.getInventory());
 		
 		//If there is null change for the transaction, the player doesn't have enough money
-		if(Currency.getChange(price, currency, false)==null){
+		if(plugin.currencyManager().getChange(price, currency)==null){
 			plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"NSF: "+ChatColor.WHITE+"You do not have enough money!");
 			event.setCancelled(true);
 			return;
@@ -126,7 +126,7 @@ public class StoreListener implements Listener {
 		 * By this point they have committed to purchasing the item!
 		 */
 		
-		HashMap<Integer,ItemStack> change	=	Currency.getChange(price, currency, Currency.hasDiamond(currency));
+		HashMap<Integer,ItemStack> change	=	plugin.currencyManager().getChange(price, currency);
 		
 		//Iterate through all of the player's money and remove it
 		Iterator<ItemStack> citr			=	currency.values().iterator();
