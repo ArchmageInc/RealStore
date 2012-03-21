@@ -1,6 +1,6 @@
 name: RealStore
 main: com.archmageinc.RealStore.RealStore
-version: 0.0.1
+version: 0.1
 description: Allow players to define a chest store front and set their prices based on in-game items.
 commands:
   RealStore:

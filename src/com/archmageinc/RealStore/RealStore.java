@@ -603,27 +603,27 @@ public class RealStore extends JavaPlugin {
 		if(amount<=0)
 			return;
 		
-		logMessage("Performing a deposit for "+player.getName());
+		//logMessage("Performing a deposit for "+player.getName());
 		
 		Iterator<Chest> itr				=	coffers.keySet().iterator();
 		
-		logMessage("There are "+coffers.keySet().size()+" coffers stored");
+		//logMessage("There are "+coffers.keySet().size()+" coffers stored");
 		HashSet<ItemStack> currency		=	Currency.colorUpSet(amount, false);
 		while(itr.hasNext()){
 			Chest chest	=	itr.next();
 			if(coffers.get(chest).equals(player)){
 				
-				logMessage("Found a coffer for "+player.getName()+".");
+				//logMessage("Found a coffer for "+player.getName()+".");
 				
 				HashSet<ItemStack> left		=	new HashSet<ItemStack>();
 				Iterator<ItemStack> citr	=	currency.iterator();
 				while(citr.hasNext()){
 					ItemStack item					=	citr.next();
-					logMessage("Depositing "+item.toString()+" in a coffer");
+					//logMessage("Depositing "+item.toString()+" in a coffer");
 					Collection<ItemStack> remainder	=	chest.getInventory().addItem(item).values();
 					citr.remove();
 					if(remainder.size()>0){
-						logMessage("Unable to fit all of the money in the coffer, will attempt next coffer");
+						//logMessage("Unable to fit all of the money in the coffer, will attempt next coffer");
 						left.addAll(remainder);
 					}
 				}
@@ -637,7 +637,7 @@ public class RealStore extends JavaPlugin {
 			/**
 			 * We couldn't fit all of the money in their coffers
 			 */
-			logMessage("The currency would not fit in the coffer!");
+			//logMessage("The currency would not fit in the coffer!");
 			if(player.isOnline()){
 				Player owner	=	player.getPlayer();
 				sendPlayerMessage(owner, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"Your coffers are full! Sending the money directly to you!");
