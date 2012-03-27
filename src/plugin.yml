@@ -11,5 +11,14 @@ commands:
     permission-message: You do not have permission to start RealStore interactions
 permissions:
   RealStore.*:
+    description: Allows a player all access to RealStore interactions
+    default: true
+    children:
+      RealStore.stores: true
+      RealStore.trade: true
+  RealStore.stores:
     description: Allows a player to create coffers and stores
+    default: true
+  RealStore.trade:
+    description: Allows a player to setup trade goods
     default: true

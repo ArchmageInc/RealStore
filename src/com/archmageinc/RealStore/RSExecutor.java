@@ -26,11 +26,6 @@ public class RSExecutor implements CommandExecutor {
 			
 			Player player	=	(Player) sender;
 			
-			if(!player.hasPermission("RealStore")){
-				plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to do that.");
-				return true;
-			}
-			
 			if(args.length<1){
 				plugin.sendPlayerMessage(player,ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"No RealStore command found! Please use '/rs help' for proper RealStore usage. ");
 				return true;
@@ -51,6 +46,10 @@ public class RSExecutor implements CommandExecutor {
  * Setting Stores
  **********************************************************/
 			if(rsCommand.equals("store")){
+				if(!player.hasPermission("RealStore.stores")){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to do that.");
+					return true;
+				}
 				if(args.length<2){
 					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Do you wish to add or remove a store? Use '/rs help store' for more information.");
 					return true;
@@ -81,11 +80,27 @@ public class RSExecutor implements CommandExecutor {
 				plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Unknown store command! Use '/rs help store' for more information.");
 				return true;
 			}
-			
+/**************************************************************
+ * Setting Trade
+ **************************************************************/
+			if(rsCommand.equals("trade")){
+				if(!player.hasPermission("RealStore.trade")){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to set up trade goods.");
+					return true;
+				}
+				/**
+				 * TODO: Add trade good interactions
+				 */
+				
+			}
 /**************************************************************
  * Setting Prices
  **************************************************************/
 			if(rsCommand.equals("price")){
+				if(!player.hasPermission("RealStore.stores")){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to do that.");
+					return true;
+				}
 				if(args.length<2){
 					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" No price found. Use '/rs help price' for proper RealStore price setting usage.");
 					return true;
@@ -117,17 +132,27 @@ public class RSExecutor implements CommandExecutor {
 							Byte data				=	args.length>3 ? (byte) Integer.parseInt(args[3]) : (byte) 0;
 							
 							if(Material.matchMaterial(type)==null){
+								/******************************
+								 * Default setting price
+								 ******************************/
 								if(type.equalsIgnoreCase("default")){
-									/******************************
-									 * Default setting price
-									 ******************************/
 									plugin.sendPlayerMessage(player, "Click on the chest store to set the default price to "+price+" gold nuggets");
 									plugin.getServer().getPluginManager().registerEvents(new PriceSetListener(plugin,player,price,true), plugin);
 									return true;
-								}else{
-									plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Unknown material used to set the price. Use '/rs help material' to list material names.");
+								}
+								/******************************
+								 * Checking Prices
+								 ******************************/
+								if(type.equalsIgnoreCase("check")){
+									/**
+									 * TODO: Setup price checking system
+									 */
+									plugin.sendPlayerMessage(player, "Open one of your stores to check the prices of items");
 									return true;
 								}
+									plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Unknown material used to set the price. Use '/rs help material' to list material names.");
+									return true;
+								
 							}
 							
 							MaterialData material	=	new MaterialData(Material.matchMaterial(type),data);
@@ -158,6 +183,11 @@ public class RSExecutor implements CommandExecutor {
  * Setting Coffers
  *******************************************************/
 			if(rsCommand.equals("coffer")){
+				if(!player.hasPermission("RealStore.stores")){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to do that.");
+					return true;
+				}
+				
 				if(args.length<2){
 					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Do you wish to add or remove a coffer? Use '/rs help coffer' for more information.");
 					return true;
@@ -184,10 +214,6 @@ public class RSExecutor implements CommandExecutor {
 				return true;
 				
 			}
-			/**
-			 * TODO: Add a method for store owners to check prices
-			 */
-			
 			
 /**********************************************************
  * Unknown RealStore Command
