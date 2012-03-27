@@ -140,18 +140,9 @@ public class RSExecutor implements CommandExecutor {
 									plugin.getServer().getPluginManager().registerEvents(new PriceSetListener(plugin,player,price,true), plugin);
 									return true;
 								}
-								/******************************
-								 * Checking Prices
-								 ******************************/
-								if(type.equalsIgnoreCase("check")){
-									/**
-									 * TODO: Setup price checking system
-									 */
-									plugin.sendPlayerMessage(player, "Open one of your stores to check the prices of items");
-									return true;
-								}
-									plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Unknown material used to set the price. Use '/rs help material' to list material names.");
-									return true;
+								
+								plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Unknown material used to set the price. Use '/rs help material' to list material names.");
+								return true;
 								
 							}
 							
@@ -174,6 +165,18 @@ public class RSExecutor implements CommandExecutor {
 					return true;
 					
 				}catch(NumberFormatException e){
+					/******************************
+					 * Checking Prices
+					 ******************************/
+					if(args[1].equalsIgnoreCase("check")){
+						if(!plugin.hasStore(player)){
+							plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You must first have a store before you can check the prices of items in it.");
+							return true;
+						}
+						plugin.getServer().getPluginManager().registerEvents(new PriceCheckListener(plugin,player), plugin);
+						plugin.sendPlayerMessage(player, "Open one of your stores to check the prices of items");
+						return true;
+					}
 					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Improper price. Use '/rs help price' for proper RealStore price setting usage.");
 					return true;
 				}
