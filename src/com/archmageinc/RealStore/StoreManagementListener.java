@@ -97,7 +97,7 @@ public class StoreManagementListener implements Listener {
 				plugin.sendPlayerMessage(owner,ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"Unable to remove store. Try again.");
 			
 			plugin.removeSetting(owner);
-			event.getHandlers().unregister(this);
+			unregister();
 			return;
 		}		
 		
@@ -110,7 +110,11 @@ public class StoreManagementListener implements Listener {
 			plugin.sendPlayerMessage(owner,ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"Unable to add the store. Try again.");
 		
 		plugin.removeSetting(owner);
-		event.getHandlers().unregister(this);
+		unregister();
+	}
+	
+	private void unregister(){
+		PlayerInteractEvent.getHandlerList().unregister(this);
 	}
 	
 }

@@ -85,7 +85,7 @@ public class CofferManagementListener implements Listener {
 			if(plugin.isLastCoffer(owner)){
 				plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"This is your last coffer! It cannot be removed!");
 				plugin.removeSetting(owner);
-				event.getHandlers().unregister(this);
+				unregister();
 				return;
 			}
 			
@@ -95,7 +95,7 @@ public class CofferManagementListener implements Listener {
 				plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"Unable to remove coffer. Try again.");
 			
 			plugin.removeSetting(owner);
-			event.getHandlers().unregister(this);
+			unregister();
 			return;	
 		}
 		
@@ -108,8 +108,12 @@ public class CofferManagementListener implements Listener {
 			plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"Unable to add coffer. Try again.");
 		
 		plugin.removeSetting(owner);
-		event.getHandlers().unregister(this);
+		unregister();
 		return;	
+	}
+	
+	private void unregister(){
+		PlayerInteractEvent.getHandlerList().unregister(this);
 	}
 	
 }
