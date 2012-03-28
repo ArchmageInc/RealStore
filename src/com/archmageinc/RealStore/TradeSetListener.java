@@ -14,12 +14,13 @@ import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 
-public class PriceCheckListener implements Listener {
+public class TradeSetListener implements Listener {
+
 	private RealStore plugin;
 	private Player owner;
 	private Boolean clear	=	false;
 	
-	public PriceCheckListener(RealStore instance,Player player){
+	public TradeSetListener(RealStore instance,Player player){
 		plugin	=	instance;
 		owner	=	player;
 	}
@@ -46,7 +47,7 @@ public class PriceCheckListener implements Listener {
 			return;
 		
 		if(!plugin.getStoreOwner(chest).equals(player)){
-			plugin.sendPlayerMessage(player, "You must open one of "+ChatColor.GOLD+"your"+ChatColor.WHITE+" stores to check the price of items. Use /rs price check again.");
+			plugin.sendPlayerMessage(player, "You must open one of "+ChatColor.GOLD+"your"+ChatColor.WHITE+" stores to set the trade value of items. Use /rs trade again.");
 			unregister();
 			event.setCancelled(true);
 			return;
@@ -56,7 +57,7 @@ public class PriceCheckListener implements Listener {
 		 * We've opened one of our stores, when it closes, stop listening
 		 */
 		clear	=	true;
-		plugin.sendPlayerMessage(player, "Click on any of the items in your store to check the price");
+		plugin.sendPlayerMessage(player, "Click on any of the items in your store with an item on the cursor to set the trade value.");
 	}
 	
 	@EventHandler
@@ -87,17 +88,13 @@ public class PriceCheckListener implements Listener {
 		
 	}
 	
-	
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent event){
-		//Don't handle non-player inventory interactions
-		if(!(event.getWhoClicked() instanceof Player)) 
+		if(!event.getWhoClicked().equals(owner))
 			return;
-		
 		//Don't handle non-chest interactions
 		if(!event.getInventory().getType().equals(InventoryType.CHEST)) 
 			return;
-		
 		//Temporary fix to get around double chest casting errors
 		if(!(event.getInventory().getHolder() instanceof Chest))
 			return;
@@ -113,11 +110,9 @@ public class PriceCheckListener implements Listener {
 		if(!plugin.getStoreOwner(chest).equals(player)) 
 			return;
 		
-		//Cancel all player inventory manipulation
-		if(event.getRawSlot()>=event.getInventory().getSize()){ 
-			event.setCancelled(true);
+		//Don't handle modifications to player's inventory (Except shift click as that would put stuff in the store)
+		if(event.getRawSlot()>=event.getInventory().getSize() && !event.isShiftClick()) 
 			return;
-		}
 		
 		//Cancel store interactions with nothing under the cursor
 		if(event.getCurrentItem()==null || event.getCurrentItem().getType().equals(Material.AIR)){
@@ -131,17 +126,26 @@ public class PriceCheckListener implements Listener {
 			return;
 		}
 		
+		//Cancel player inventory shift click events
+		if(event.getRawSlot()>=event.getInventory().getSize() && event.isShiftClick()){
+			event.setCancelled(true);
+			return;
+		}
+		
 		/**
 		 * By this time, the player is the owner of the store and has clicked on an item in the store
 		 */
 		MaterialData data	=	event.getCurrentItem().getData();
-		Integer price		=	plugin.getPrice(chest, data);
-		ItemStack trade		=	plugin.getTrade(chest, data);
 		
-		if(trade==null)
-			plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Price: "+ChatColor.WHITE+plugin.currencyManager().getValueString(price));
-		else
-			plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Trade: "+ChatColor.WHITE+trade.toString());
+		//If they didn't click with anything on the cursor
+		if(event.getCursor()==null){
+			plugin.sendPlayerMessage(player, "Click on an item in the store, with a stack on the cursor to set the trade value of that item.");
+			event.setCancelled(true);
+			return;
+		}
+		
+		ItemStack trade		=	event.getCursor();
+		plugin.setPrice(player, chest, data, trade);
 		
 		event.setCancelled(true);
 	}

@@ -27,7 +27,7 @@ public class RealStore extends JavaPlugin {
 	private Logger log;
 	private Hashtable<Chest,OfflinePlayer> stores						=	new Hashtable<Chest,OfflinePlayer>();
 	private Hashtable<Chest,OfflinePlayer> coffers						=	new Hashtable<Chest,OfflinePlayer>();
-	private Hashtable<Chest,Hashtable<MaterialData,Integer>> prices		=	new Hashtable<Chest,Hashtable<MaterialData,Integer>>();
+	private Hashtable<Chest,Hashtable<MaterialData,Object>> prices		=	new Hashtable<Chest,Hashtable<MaterialData,Object>>();
 	private Hashtable<Chest,Integer> defaultPrices						=	new Hashtable<Chest,Integer>();
 	private HashSet<Player> setting										=	new HashSet<Player>();
 	private HashSet<Player> removeSetting								=	new HashSet<Player>();
@@ -141,7 +141,12 @@ public class RealStore extends JavaPlugin {
 				Iterator<MaterialData> pitr	=	prices.get(chest).keySet().iterator();
 				while(pitr.hasNext()){
 					MaterialData mdata	=	pitr.next();
-					Integer price		=	prices.get(chest).get(mdata);
+					Object price;
+					if(prices.get(chest).get(mdata) instanceof Integer){
+						price		=	prices.get(chest).get(mdata);
+					}else{
+						price		=	((ItemStack) prices.get(chest).get(mdata)).getTypeId()+"-"+((ItemStack) prices.get(chest).get(mdata)).getData()+((ItemStack) prices.get(chest).get(mdata)).getAmount();
+					}
 					String material		=	mdata.getItemTypeId()+"-"+mdata.getData();
 					config.set("stores."+location+".prices."+material, price);
 				}
@@ -231,9 +236,15 @@ public class RealStore extends JavaPlugin {
 					Iterator<String> pitr	=	config.getConfigurationSection("stores."+key+".prices").getKeys(false).iterator();
 					while(pitr.hasNext()){
 						String mName		=	pitr.next();
-						Integer price		=	config.getInt("stores."+key+".prices."+mName);
 						MaterialData mData	=	new MaterialData(Integer.parseInt(mName.split("-")[0]),Byte.parseByte(mName.split("-")[1]));
-						setPrice(player,chest,mData,price);
+						if(config.getInt("stores."+key+".prices."+mName)!=0){
+							Integer price		=	config.getInt("stores."+key+".prices."+mName);
+							setPrice(player,chest,mData,price);
+						}else{
+							String tradeString	=	config.getString("stores."+key+".prices."+mName);
+							ItemStack price		=	new ItemStack(Integer.parseInt(tradeString.split("-")[0]),Integer.parseInt(tradeString.split("-")[2]),Short.parseShort(tradeString.split("-")[1]));
+							setPrice(player,chest,mData,price);
+						}
 					}
 				}
 			}catch(NullPointerException e){
@@ -556,10 +567,26 @@ public class RealStore extends JavaPlugin {
 			return false;
 		
 		if(prices.get(chest)==null){
-			prices.put(chest, new Hashtable<MaterialData,Integer>());
+			prices.put(chest, new Hashtable<MaterialData,Object>());
 		}
 		
 		prices.get(chest).put(material, price);
+		saveStores();
+		return true;
+	}
+	
+	public boolean setPrice(OfflinePlayer player,Chest chest,MaterialData material,ItemStack trade){
+		if(player==null || chest==null || material==null || trade==null)
+			return false;
+		if(!isStore(chest))
+			return false;
+		if(!getStoreOwner(chest).equals(player))
+			return false;
+		
+		if(prices.get(chest)==null){
+			prices.put(chest, new Hashtable<MaterialData,Object>());
+		}
+		prices.get(chest).put(material, trade);
 		saveStores();
 		return true;
 	}
@@ -601,9 +628,13 @@ public class RealStore extends JavaPlugin {
 		if(chest==null || data==null)
 			return null;
 		
-		if(prices.containsKey(chest) && prices.get(chest).containsKey(data))
-			return prices.get(chest).get(data);
-		
+		if(prices.containsKey(chest) && prices.get(chest).containsKey(data)){
+			if(prices.get(chest).get(data) instanceof Integer){
+				return (Integer) prices.get(chest).get(data);
+			}else{
+				return 0;
+			}
+		}
 		if(defaultPrices.containsKey(chest))
 			return defaultPrices.get(chest);
 		
@@ -612,6 +643,20 @@ public class RealStore extends JavaPlugin {
 	
 	public Currency currencyManager(){
 		return currencyManager;
+	}
+	
+	public ItemStack getTrade(Chest chest,MaterialData data){
+		if(chest==null || data==null)
+			return null;
+		if(prices.containsKey(chest) && prices.get(chest).containsKey(data)){
+			if(prices.get(chest).get(data) instanceof Integer){
+				return null;
+			}else{
+				return (ItemStack) prices.get(chest).get(data);
+			}
+		}
+		
+		return null;
 	}
 	
 	/**
@@ -627,27 +672,20 @@ public class RealStore extends JavaPlugin {
 		if(amount<=0)
 			return;
 		
-		//logMessage("Performing a deposit for "+player.getName());
-		
 		Iterator<Chest> itr				=	coffers.keySet().iterator();
 		
-		//logMessage("There are "+coffers.keySet().size()+" coffers stored");
 		HashSet<ItemStack> currency		=	currencyManager.colorUpSet(amount);
 		while(itr.hasNext()){
 			Chest chest	=	itr.next();
 			if(coffers.get(chest).equals(player)){
 				
-				//logMessage("Found a coffer for "+player.getName()+".");
-				
 				HashSet<ItemStack> left		=	new HashSet<ItemStack>();
 				Iterator<ItemStack> citr	=	currency.iterator();
 				while(citr.hasNext()){
 					ItemStack item					=	citr.next();
-					//logMessage("Depositing "+item.toString()+" in a coffer");
 					Collection<ItemStack> remainder	=	chest.getInventory().addItem(item).values();
 					citr.remove();
 					if(remainder.size()>0){
-						//logMessage("Unable to fit all of the money in the coffer, will attempt next coffer");
 						left.addAll(remainder);
 					}
 				}
@@ -661,7 +699,6 @@ public class RealStore extends JavaPlugin {
 			/**
 			 * We couldn't fit all of the money in their coffers
 			 */
-			//logMessage("The currency would not fit in the coffer!");
 			if(player.isOnline()){
 				Player owner	=	player.getPlayer();
 				sendPlayerMessage(owner, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"Your coffers are full! Sending the money directly to you!");
@@ -673,5 +710,39 @@ public class RealStore extends JavaPlugin {
 				logMessage("The owner was not online so we have nowhere to put the money!");
 			}
 		}
+	}
+	
+	public void deposit(OfflinePlayer player,ItemStack trade){
+		if(player==null || trade==null)
+			return;
+		
+		Iterator<Chest> itr				=	coffers.keySet().iterator();
+		while(itr.hasNext()){
+			Chest chest	=	itr.next();
+			if(coffers.get(chest).equals(player)){
+				Collection<ItemStack> remainder	=	chest.getInventory().addItem(trade).values();
+				if(remainder.size()>0){
+					trade	=	(ItemStack) remainder.toArray()[0];
+				}else{
+					trade	=	null;
+					break;
+				}
+				
+			}
+		}
+		
+		/**
+		 * We couldn't fit all of the trade goods in the coffers
+		 */
+		if(trade!=null){
+			if(player.isOnline()){
+				Player owner	=	player.getPlayer();
+				sendPlayerMessage(owner, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"Your coffers are full! Sending the trade goods directly to you!");
+				owner.getWorld().dropItemNaturally(owner.getLocation(), trade);
+			}else{
+				logMessage("The owner was not online so we have nowhere to put the trade goods!");
+			}
+		}
+		
 	}
 }

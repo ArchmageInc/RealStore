@@ -95,29 +95,127 @@ public class StoreListener implements Listener {
 		
 		MaterialData data	=	event.getCurrentItem().getData();
 		Integer price		=	plugin.getPrice(chest, data);
+		ItemStack trade		=	plugin.getTrade(chest,data);
 		
-		//If they didn't click with currency on the cursor, tell them the price
-		if(!plugin.currencyManager().isCurrency(event.getCursor())){
-			plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Cost: "+ChatColor.WHITE+plugin.currencyManager().getValueString(price));
+		//If they didn't click with anything on the cursor, tell them the price
+		if(event.getCursor()==null){
+			if(trade==null){
+				plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Cost: "+ChatColor.WHITE+plugin.currencyManager().getValueString(price));
+				event.setCancelled(true);
+				return;
+			}else{
+				plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Cost: "+ChatColor.WHITE+trade.toString());
+				event.setCancelled(true);
+				return;
+			}
+		}
+		
+/**********************************************
+ * Selling the item
+ **********************************************/
+		if(trade==null && plugin.currencyManager().isCurrency(event.getCursor())){
+
+			player.getInventory().addItem(event.getCursor());
+			event.setCursor(new ItemStack(Material.AIR));
+			
+			HashMap<Integer,ItemStack> currency	=	plugin.currencyManager().getCurrency(player.getInventory());
+			
+			//If there is null change for the transaction, the player doesn't have enough money
+			if(plugin.currencyManager().getChange(price, currency)==null){
+				plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"NSF: "+ChatColor.WHITE+"You do not have enough money!");
+				event.setCancelled(true);
+				return;
+			}
+			/**
+			 * By this point they have committed to purchasing the item!
+			 */
+			HashMap<Integer,ItemStack> change	=	plugin.currencyManager().getChange(price, currency);
+			//Iterate through all of the player's money and remove it
+			Iterator<ItemStack> citr			=	currency.values().iterator();
+			while(citr.hasNext()){
+				HashMap<Integer,ItemStack> remainder	=	player.getInventory().removeItem(citr.next());
+				if(remainder.size()>0){
+					/**
+					 * Something went bad during the transaction and not all of the money they
+					 * had was available!
+					 * TODO: Do something about it
+					 */
+				}
+			}
+			
+			//Iterate through all of their change and put it in their inventory
+			Iterator<ItemStack> chitr			=	change.values().iterator();
+			while(chitr.hasNext()){
+				HashMap<Integer,ItemStack> uChange	=	player.getInventory().addItem(chitr.next());
+				if(uChange.size()>0){
+					/**
+					 * There was not enough room in their inventory to fit all of the change. Spill it on the ground
+					 */
+					plugin.sendPlayerMessage(player, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"There wasn't enough room in your inventory for your change. You dropped it on the ground.");
+					Iterator<ItemStack> ucitr	=	uChange.values().iterator();
+					while(ucitr.hasNext()){
+						player.getWorld().dropItemNaturally(player.getLocation(), ucitr.next());
+					}
+				}
+			}
+			
+			plugin.sendPlayerMessage(player, ChatColor.GREEN+"You purchased "+ChatColor.WHITE+event.getCurrentItem().getType().toString()+ChatColor.GREEN+" for "+ChatColor.WHITE+price+ChatColor.GREEN+" gold nuggets.");
+			ItemStack sold	=	event.getCurrentItem().clone();
+			sold.setAmount(1);
+			
+			/**
+			 * Remove the purchased item from the store
+			 */
+			//If the current amount is 1 the entire stack must be removed 
+			if(event.getCurrentItem().getAmount()==1)
+				event.getInventory().setItem(event.getSlot(),new ItemStack(Material.AIR));
+			//Otherwise just reduce the amount by 1
+			else
+				event.getCurrentItem().setAmount(event.getCurrentItem().getAmount()-1);
+			
+			/**
+			 * Place the purchased item in the player's inventory
+			 */
+			HashMap<Integer,ItemStack> remainder	=	player.getInventory().addItem(sold);
+			if(remainder.size()>0){
+				//Iterate through any returned items (Currently this should only ever be 1 item)
+				Iterator<ItemStack> itr	=	remainder.values().iterator();
+				while(itr.hasNext()){
+					/**
+					 * There wasn't enough room in their inventory for the item, spill it
+					 */
+					plugin.sendPlayerMessage(player, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"There wasn't enough room in your inventory for your item. You dropped it on the ground.");
+					player.getWorld().dropItemNaturally(player.getLocation(), itr.next());
+				}
+			}
+			
+			/**
+			 * Deposit the money in the store owner's coffers
+			 */
+			OfflinePlayer owner	=	plugin.getStoreOwner(chest);
+			plugin.deposit(owner, price);
+			event.setCancelled(true);
+			return;
+		}
+/**********************************************
+ * Trading for the item
+ **********************************************/		
+		if(!event.getCursor().getData().equals(trade.getData())){
+			plugin.sendPlayerMessage(player, "You must click on the item for trade with the intended trade good.");
 			event.setCancelled(true);
 			return;
 		}
 		
 		/**
-		 * The code below is correct, but there is an error somewhere in bukkit see 
-		 * BUKKIT-1043
-		 * Until this is fixed, we can't count the currency on the cursor.
+		 * By this point, they have clicked on a trade good with the item for trade
 		 */
-		/*
+		
 		player.getInventory().addItem(event.getCursor());
 		event.setCursor(new ItemStack(Material.AIR));
-		*/
 		
-		HashMap<Integer,ItemStack> currency	=	plugin.currencyManager().getCurrency(player.getInventory());
-		
-		//If there is null change for the transaction, the player doesn't have enough money
-		if(plugin.currencyManager().getChange(price, currency)==null){
-			plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"NSF: "+ChatColor.WHITE+"You do not have enough money!");
+		//The player did not have enough of the trade good in their inventory
+		if(!player.getInventory().contains(trade,trade.getAmount())){
+			plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"NSF: "+ChatColor.WHITE+"You do not have enough of the intended trade good!");
 			event.setCancelled(true);
 			return;
 		}
@@ -126,38 +224,10 @@ public class StoreListener implements Listener {
 		 * By this point they have committed to purchasing the item!
 		 */
 		
-		HashMap<Integer,ItemStack> change	=	plugin.currencyManager().getChange(price, currency);
-		
-		//Iterate through all of the player's money and remove it
-		Iterator<ItemStack> citr			=	currency.values().iterator();
-		while(citr.hasNext()){
-			HashMap<Integer,ItemStack> remainder	=	player.getInventory().removeItem(citr.next());
-			if(remainder.size()>0){
-				/**
-				 * Something went bad during the transaction and not all of the money they
-				 * had was available!
-				 * TODO: Do something about it
-				 */
-			}
-		}
-		
-		//Iterate through all of their change and put it in their inventory
-		Iterator<ItemStack> chitr			=	change.values().iterator();
-		while(chitr.hasNext()){
-			HashMap<Integer,ItemStack> uChange	=	player.getInventory().addItem(chitr.next());
-			if(uChange.size()>0){
-				/**
-				 * There was not enough room in their inventory to fit all of the change. Spill it on the ground
-				 */
-				plugin.sendPlayerMessage(player, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"There wasn't enough room in your inventory for your change. You dropped it on the ground.");
-				Iterator<ItemStack> ucitr	=	uChange.values().iterator();
-				while(ucitr.hasNext()){
-					player.getWorld().dropItemNaturally(player.getLocation(), ucitr.next());
-				}
-			}
-		}
-		
-		plugin.sendPlayerMessage(player, ChatColor.GREEN+"You purchased "+ChatColor.WHITE+event.getCurrentItem().getType().toString()+ChatColor.GREEN+" for "+ChatColor.WHITE+price+ChatColor.GREEN+" gold nuggets.");
+		//Remove trade good from the player's inventory
+		player.getInventory().remove(trade.clone());
+				
+		plugin.sendPlayerMessage(player, ChatColor.GREEN+"You purchased "+ChatColor.WHITE+event.getCurrentItem().getType().toString()+ChatColor.GREEN+" for "+ChatColor.WHITE+trade.toString()+ChatColor.GREEN+".");
 		ItemStack sold	=	event.getCurrentItem().clone();
 		sold.setAmount(1);
 		
@@ -170,6 +240,7 @@ public class StoreListener implements Listener {
 		//Otherwise just reduce the amount by 1
 		else
 			event.getCurrentItem().setAmount(event.getCurrentItem().getAmount()-1);
+		
 		
 		/**
 		 * Place the purchased item in the player's inventory
@@ -188,10 +259,10 @@ public class StoreListener implements Listener {
 		}
 		
 		/**
-		 * Deposit the money in the store owner's coffers
+		 * Deposit the trade goods in the store owner's coffers
 		 */
-		OfflinePlayer owner	=	plugin.getStoreOwner(chest);
-		plugin.deposit(owner, price);
+		plugin.deposit(plugin.getStoreOwner(chest), trade.clone());
+		
 		event.setCancelled(true);
 		
 	}
