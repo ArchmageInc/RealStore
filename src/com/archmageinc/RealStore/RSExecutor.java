@@ -88,9 +88,9 @@ public class RSExecutor implements CommandExecutor {
 					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to set up trade goods.");
 					return true;
 				}
-				/**
-				 * TODO: Add trade good interactions
-				 */
+				plugin.sendPlayerMessage(player, "Open a store, and click on an item for sale with the item and amount you wish to trade for.");
+				plugin.getServer().getPluginManager().registerEvents(new TradeSetListener(plugin, player),plugin);
+				return true;
 				
 			}
 /**************************************************************
