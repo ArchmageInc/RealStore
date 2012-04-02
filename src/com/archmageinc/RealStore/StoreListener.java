@@ -21,6 +21,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 
@@ -304,28 +305,23 @@ public class StoreListener implements Listener {
 	 * @param event
 	 */
 	@EventHandler
-	public void onInventoryOpen(InventoryOpenEvent event){
-		if(!event.getInventory().getType().equals(InventoryType.CHEST))
+	public void onPlayerInteract(PlayerInteractEvent event){
+		if(event.getClickedBlock()==null)
 			return;
-		if(event.getInventory().getHolder()==null)
-			return;
-		if(!(event.getInventory().getHolder() instanceof Chest))
+		if(!(event.getClickedBlock().getState() instanceof Chest))
 			return;
 		
-		if(!(event.getPlayer() instanceof Player))
-			return;
-		
-		Chest chest		=	(Chest) event.getInventory().getHolder();
-		Player player	=	(Player) event.getPlayer();
+		Chest chest		=	(Chest) event.getClickedBlock();
+		Player player	=	event.getPlayer();
 		
 		if(!plugin.isCoffer(chest))
 			return;
-		
 		if(plugin.getCofferOwner(chest).equals(player))
 			return;
 		
 		plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Thief! "+ChatColor.WHITE+"That is not your coffer!");
 		event.setCancelled(true);
+		
 	}
 	
 	/**
