@@ -107,11 +107,12 @@ public class StoreListener implements Listener {
 		 * The code below is correct, but there is an error somewhere in bukkit see 
 		 * BUKKIT-1043
 		 * Until this is fixed, we can't count the currency on the cursor.
+		 * Should be fixed *fingers crossed*
 		 */
-		/*
+		
 		player.getInventory().addItem(event.getCursor());
 		event.setCursor(new ItemStack(Material.AIR));
-		*/
+		
 		
 		HashMap<Integer,ItemStack> currency	=	Currency.getCurrency(player.getInventory());
 		
