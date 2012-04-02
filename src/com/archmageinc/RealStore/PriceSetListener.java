@@ -106,7 +106,7 @@ public class PriceSetListener implements Listener {
 		}
 		
 		//If we don't already have an item type we must have the item in our hand
-		if(type==null && event.getItem().getType()==null){
+		if(type==null && (event.getItem()==null || event.getItem().getType()==null)){
 			plugin.sendPlayerMessage(owner, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You must have the item whos price you wish to set in your hand!");
 			return;	
 		}else{
