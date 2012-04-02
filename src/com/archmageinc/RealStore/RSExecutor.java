@@ -26,7 +26,7 @@ public class RSExecutor implements CommandExecutor {
 			
 			Player player	=	(Player) sender;
 			
-			if(!player.hasPermission("RealStore")){
+			if(!player.hasPermission("RealStore.*")){
 				plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to do that.");
 				return true;
 			}
