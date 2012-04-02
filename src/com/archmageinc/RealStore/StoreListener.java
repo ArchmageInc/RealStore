@@ -311,7 +311,7 @@ public class StoreListener implements Listener {
 		if(!(event.getClickedBlock().getState() instanceof Chest))
 			return;
 		
-		Chest chest		=	(Chest) event.getClickedBlock();
+		Chest chest		=	(Chest) event.getClickedBlock().getState();
 		Player player	=	event.getPlayer();
 		
 		if(!plugin.isCoffer(chest))
