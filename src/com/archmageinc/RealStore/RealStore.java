@@ -59,7 +59,7 @@ public class RealStore extends JavaPlugin {
 	private void initialConfigCheck(){
 		getConfig().options().copyDefaults(true);
 		logMessage("Saving default configuration file.");
-		saveDefaultConfig();
+		saveConfig();
 	}
 	
 	/**
