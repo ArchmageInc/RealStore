@@ -33,6 +33,7 @@ public class RealStore extends JavaPlugin {
 	private HashSet<Player> removeSetting								=	new HashSet<Player>();
 	private final String storeFileName									=	"stores";
 	private final String cofferFileName									=	"coffers";
+	private boolean debug;
 	
 	@Override
 	public void onEnable(){
@@ -40,6 +41,7 @@ public class RealStore extends JavaPlugin {
 		initialConfigCheck();
 		loadCoffers();
 		loadStores();
+		debug	=	getConfig().getBoolean("debug");
 		getCommand("RealStore").setExecutor(new RSExecutor(this));
 		getServer().getPluginManager().registerEvents(new StoreListener(this), this);
 		logMessage("Enabled");
@@ -56,10 +58,8 @@ public class RealStore extends JavaPlugin {
 	 */
 	private void initialConfigCheck(){
 		getConfig().options().copyDefaults(true);
-		if(!(new File(getDataFolder(),"config.yml").exists())){
-			logMessage("Saving default configuration file.");
-			saveDefaultConfig();
-		}
+		logMessage("Saving default configuration file.");
+		saveDefaultConfig();
 	}
 	
 	/**
@@ -167,14 +167,18 @@ public class RealStore extends JavaPlugin {
 				String pName		=	config.getString("coffers."+key+".player");
 				Location chestLoc	=	new Location(world,Double.parseDouble(key.split("x")[1]),Double.parseDouble(key.split("x")[2]),Double.parseDouble(key.split("x")[3]));
 				//The chest was some how missing since we last loaded, don't add it
-				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest))
+				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest)){
+					logMessage("A coffer belonging to "+pName+" does not appear to exist in the world!");
 					continue;
+				}
 				Chest chest				=	(Chest) world.getBlockAt(chestLoc).getState();
 				OfflinePlayer player	=	getServer().getOfflinePlayer(pName);
 				//No offline player by that name, can't add it
-				if(player==null)
+				if(player==null){
+					logMessage("The player "+pName+" does not appear to exist, though they have an assigned coffer!");
 					continue;
-				if(!addCoffer(player,chest))
+				}
+				if(!addCoffer(player,chest,false))
 					logWarning("Unable to add a coffer to the list for "+player.getName()+"!");
 			}catch(NullPointerException e){
 				logWarning("The coffer file has been improperly modified!");
@@ -182,6 +186,7 @@ public class RealStore extends JavaPlugin {
 			}
 			
 		}
+		saveCoffers();
 	}
 	
 	/**
@@ -204,16 +209,20 @@ public class RealStore extends JavaPlugin {
 				Integer defPrice		=	config.getInt("stores."+key+".default-price");
 				Location chestLoc		=	new Location(world,Double.parseDouble(key.split("x")[1]),Double.parseDouble(key.split("x")[2]),Double.parseDouble(key.split("x")[3]));
 				//The chest was somehow missing since we last loaded, don't add it
-				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest))
+				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest)){
+					logMessage("A store belonging to "+pName+" does not appear to exist in the world!");
 					continue;
+				}
 				
 				Chest chest				=	(Chest) world.getBlockAt(chestLoc).getState();
 				OfflinePlayer player	=	getServer().getOfflinePlayer(pName);
 				//No offline player by that name, can't add it
-				if(player==null)
+				if(player==null){
+					logMessage("The player by "+pName+" does not appear to exist, though they have a store assigned!");
 					continue;
+				}
 				
-				if(!addStore(player,chest)){
+				if(!addStore(player,chest,false)){
 					logWarning("Unable to add a store to the list for "+player.getName()+"!");
 					continue;
 				}
@@ -234,6 +243,7 @@ public class RealStore extends JavaPlugin {
 			
 			
 		}
+		saveStores();
 	}
 	
 	/**
@@ -333,6 +343,7 @@ public class RealStore extends JavaPlugin {
 		setting.remove(player);
 		removeSetting.remove(player);
 	}
+	
 	/**
 	 * Checks to see if the specified Chest is a store
 	 * 
@@ -354,6 +365,10 @@ public class RealStore extends JavaPlugin {
 	 * @return boolean True if adding the store worked, false otherwise
 	 */
 	public boolean addStore(OfflinePlayer player,Chest chest){
+		return addStore(player,chest,true);
+	}
+	
+	public boolean addStore(OfflinePlayer player,Chest chest, Boolean save){
 		if(player==null || chest==null)
 			return false;
 		if(isStore(chest))
@@ -362,7 +377,8 @@ public class RealStore extends JavaPlugin {
 			return false;
 		
 		stores.put(chest, player);
-		saveStores();
+		if(save)
+			saveStores();
 		return true;
 	}
 	
@@ -373,6 +389,10 @@ public class RealStore extends JavaPlugin {
 	 * @return boolean True if the removal worked, false otherwise
 	 */
 	public boolean removeStore(Chest chest){
+		return removeStore(chest,true);
+	}
+	
+	public boolean removeStore(Chest chest,Boolean save){
 		if(chest==null)
 			return false;
 		if(!isStore(chest))
@@ -380,7 +400,8 @@ public class RealStore extends JavaPlugin {
 		
 		prices.remove(chest);
 		stores.remove(chest);
-		saveStores();
+		if(save)
+			saveStores();
 		return true;
 	}
 	
@@ -427,6 +448,10 @@ public class RealStore extends JavaPlugin {
 	 * @return boolean True if adding the coffer worked, false otherwise
 	 */
 	public boolean addCoffer(OfflinePlayer player,Chest chest){
+		return addCoffer(player,chest,true);
+	}
+	
+	public boolean addCoffer(OfflinePlayer player,Chest chest,Boolean save){
 		if(player==null || chest==null)
 			return false;
 		if(isStore(chest))
@@ -435,7 +460,8 @@ public class RealStore extends JavaPlugin {
 			return false;
 		
 		coffers.put(chest, player);
-		saveCoffers();
+		if(save)
+			saveCoffers();
 		return true;
 	}
 	
@@ -446,12 +472,17 @@ public class RealStore extends JavaPlugin {
 	 * @return boolean True if the removal worked, false otherwise
 	 */
 	public boolean removeCoffer(Chest chest){
+		return removeCoffer(chest,true);
+	}
+	
+	public boolean removeCoffer(Chest chest, Boolean save){
 		if(chest==null)
 			return false;
 		if(!isCoffer(chest))
 			return false;
 		coffers.remove(chest);
-		saveCoffers();
+		if(save)
+			saveCoffers();
 		return true;
 	}
 	
@@ -603,27 +634,29 @@ public class RealStore extends JavaPlugin {
 		if(amount<=0)
 			return;
 		
-		//logMessage("Performing a deposit for "+player.getName());
+		if(debug)
+			logMessage("Performing a deposit for "+player.getName()+" in the amount of "+amount.toString()+".");
 		
 		Iterator<Chest> itr				=	coffers.keySet().iterator();
-		
-		//logMessage("There are "+coffers.keySet().size()+" coffers stored");
 		HashSet<ItemStack> currency		=	Currency.colorUpSet(amount, false);
+		if(debug)
+			logMessage("There are "+currency.size()+" items in the deposit.");
+		
 		while(itr.hasNext()){
 			Chest chest	=	itr.next();
 			if(coffers.get(chest).equals(player)){
-				
-				//logMessage("Found a coffer for "+player.getName()+".");
 				
 				HashSet<ItemStack> left		=	new HashSet<ItemStack>();
 				Iterator<ItemStack> citr	=	currency.iterator();
 				while(citr.hasNext()){
 					ItemStack item					=	citr.next();
-					//logMessage("Depositing "+item.toString()+" in a coffer");
+					if(debug)
+						logMessage("Depositing "+item.toString()+" in "+player.getName()+"'s coffer at "+chest.getLocation().toString()+".");
 					Collection<ItemStack> remainder	=	chest.getInventory().addItem(item).values();
+					if(debug)
+						logMessage("There were "+remainder.size()+" stacks left over");
 					citr.remove();
 					if(remainder.size()>0){
-						//logMessage("Unable to fit all of the money in the coffer, will attempt next coffer");
 						left.addAll(remainder);
 					}
 				}
@@ -637,9 +670,15 @@ public class RealStore extends JavaPlugin {
 			/**
 			 * We couldn't fit all of the money in their coffers
 			 */
-			//logMessage("The currency would not fit in the coffer!");
+			
+			if(debug)
+				logMessage("Not all of the deposit would fit in "+player.getName()+"'s coffer.");
+			
 			if(player.isOnline()){
 				Player owner	=	player.getPlayer();
+				if(debug)
+					logMessage("Player "+player.getName()+" is online, dropping it in the world at "+owner.getLocation().toString()+".");
+				
 				sendPlayerMessage(owner, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"Your coffers are full! Sending the money directly to you!");
 				Iterator<ItemStack> citr	=	currency.iterator();
 				while(citr.hasNext()){
@@ -649,5 +688,9 @@ public class RealStore extends JavaPlugin {
 				logMessage("The owner was not online so we have nowhere to put the money!");
 			}
 		}
+	}
+	
+	public boolean debug(){
+		return debug;
 	}
 }

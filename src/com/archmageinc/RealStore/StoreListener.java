@@ -98,10 +98,16 @@ public class StoreListener implements Listener {
 		
 		//If they didn't click with currency on the cursor, tell them the price
 		if(!Currency.isCurrency(event.getCursor())){
+			if(plugin.debug())
+				plugin.logMessage(player.getName()+" checked the price of "+data.toString()+" in a store at "+chest.getBlock().getLocation().toString()+".");
+			
 			plugin.sendPlayerMessage(player, ChatColor.DARK_GREEN+"Cost: "+ChatColor.WHITE+Currency.getValueString(price,false));
 			event.setCancelled(true);
 			return;
 		}
+		
+		if(plugin.debug())
+			plugin.logMessage(player.getName()+" is attempting to purchase "+data.toString()+" for "+price+" nuggets.");
 		
 		/**
 		 * The code below is correct, but there is an error somewhere in bukkit see 
@@ -115,6 +121,8 @@ public class StoreListener implements Listener {
 		
 		
 		HashMap<Integer,ItemStack> currency	=	Currency.getCurrency(player.getInventory());
+		if(plugin.debug())
+			plugin.logMessage("They have "+currency.size()+" stacks of currency in their inventory.");
 		
 		//If there is null change for the transaction, the player doesn't have enough money
 		if(Currency.getChange(price, currency, false)==null){
@@ -126,6 +134,9 @@ public class StoreListener implements Listener {
 		/**
 		 * By this point they have committed to purchasing the item!
 		 */
+		if(plugin.debug())
+			plugin.logMessage(player.getName()+" has purchased "+data.toString()+" from a store");
+		
 		
 		HashMap<Integer,ItemStack> change	=	Currency.getChange(price, currency, Currency.hasDiamond(currency));
 		
@@ -150,6 +161,9 @@ public class StoreListener implements Listener {
 				/**
 				 * There was not enough room in their inventory to fit all of the change. Spill it on the ground
 				 */
+				if(plugin.debug())
+					plugin.logMessage("The purchasing player "+player.getName()+" did not have enough room in their inventory for the change from their purchase.");
+				
 				plugin.sendPlayerMessage(player, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"There wasn't enough room in your inventory for your change. You dropped it on the ground.");
 				Iterator<ItemStack> ucitr	=	uChange.values().iterator();
 				while(ucitr.hasNext()){
@@ -176,6 +190,10 @@ public class StoreListener implements Listener {
 		 * Place the purchased item in the player's inventory
 		 */
 		HashMap<Integer,ItemStack> remainder	=	player.getInventory().addItem(sold);
+		
+		if(plugin.debug())
+			plugin.logMessage("There were "+remainder.size()+" items unable to be placed in "+player.getName()+"'s inventory.");
+		
 		if(remainder.size()>0){
 			//Iterate through any returned items (Currently this should only ever be 1 item)
 			Iterator<ItemStack> itr	=	remainder.values().iterator();
@@ -183,6 +201,9 @@ public class StoreListener implements Listener {
 				/**
 				 * There wasn't enough room in their inventory for the item, spill it
 				 */
+				if(plugin.debug())
+					plugin.logMessage("Spilling the item on the ground at "+player.getLocation().toString()+".");
+				
 				plugin.sendPlayerMessage(player, ChatColor.BLUE+"Warning: "+ChatColor.WHITE+"There wasn't enough room in your inventory for your item. You dropped it on the ground.");
 				player.getWorld().dropItemNaturally(player.getLocation(), itr.next());
 			}
