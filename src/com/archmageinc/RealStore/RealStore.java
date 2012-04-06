@@ -33,7 +33,7 @@ public class RealStore extends JavaPlugin {
 	private HashSet<Player> removeSetting								=	new HashSet<Player>();
 	private final String storeFileName									=	"stores";
 	private final String cofferFileName									=	"coffers";
-	private boolean debug;
+	private boolean debug												=	false;
 	
 	@Override
 	public void onEnable(){
@@ -53,8 +53,7 @@ public class RealStore extends JavaPlugin {
 	}
 	
 	/**
-	 * Checks to see if we've written the initial config
-	 * Write it if we haven't
+	 * Write the config file out, include any changes
 	 */
 	private void initialConfigCheck(){
 		getConfig().options().copyDefaults(true);
@@ -368,6 +367,14 @@ public class RealStore extends JavaPlugin {
 		return addStore(player,chest,true);
 	}
 	
+	/**
+	 * Adds a chest to the set of stores for the specified player
+	 * 
+	 * @param player Player the player who will own the store
+	 * @param chest Chest the chest that will be the store
+	 * @param save Boolean true if the system should save the store file when added
+	 * @return boolean True if adding the store worked, false otherwise
+	 */
 	public boolean addStore(OfflinePlayer player,Chest chest, Boolean save){
 		if(player==null || chest==null)
 			return false;
@@ -392,6 +399,13 @@ public class RealStore extends JavaPlugin {
 		return removeStore(chest,true);
 	}
 	
+	/**
+	 * Removes the specified Chest as a store
+	 * 
+	 * @param chest Chest the chest to remove
+	 * @param save Boolean true if the system should save the stores after removal
+	 * @return boolean True if the removal worked, false otherwise
+	 */
 	public boolean removeStore(Chest chest,Boolean save){
 		if(chest==null)
 			return false;
@@ -451,6 +465,14 @@ public class RealStore extends JavaPlugin {
 		return addCoffer(player,chest,true);
 	}
 	
+	/**
+	 * Adds the specified chest as a coffer for the player
+	 * 
+	 * @param player Player the player owning the coffer
+	 * @param chest Chest the chest that will become a coffer
+	 * @param save Boolean true if the system should save the coffers after adding
+	 * @return boolean True if adding the coffer worked, false otherwise
+	 */
 	public boolean addCoffer(OfflinePlayer player,Chest chest,Boolean save){
 		if(player==null || chest==null)
 			return false;
@@ -475,6 +497,13 @@ public class RealStore extends JavaPlugin {
 		return removeCoffer(chest,true);
 	}
 	
+	/**
+	 * Removes a coffer from the list of coffers
+	 * 
+	 * @param chest Chest the chest to remove from the list of coffers
+	 * @param save Boolean true if the system should save the coffers after removal
+	 * @return boolean True if the removal worked, false otherwise
+	 */
 	public boolean removeCoffer(Chest chest, Boolean save){
 		if(chest==null)
 			return false;
@@ -690,6 +719,11 @@ public class RealStore extends JavaPlugin {
 		}
 	}
 	
+	/**
+	 * Is debug mode enabled?
+	 * 
+	 * @return boolean true if debug is enabled, false otherwise
+	 */
 	public boolean debug(){
 		return debug;
 	}
