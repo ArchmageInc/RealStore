@@ -25,10 +25,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class RealStore extends JavaPlugin {
 	
 	private Logger log;
-	private Hashtable<Chest,OfflinePlayer> stores						=	new Hashtable<Chest,OfflinePlayer>();
+	private Hashtable<Chest,Store> stores								=	new Hashtable<Chest,Store>();
 	private Hashtable<Chest,OfflinePlayer> coffers						=	new Hashtable<Chest,OfflinePlayer>();
-	private Hashtable<Chest,Hashtable<MaterialData,Object>> prices		=	new Hashtable<Chest,Hashtable<MaterialData,Object>>();
-	private Hashtable<Chest,Integer> defaultPrices						=	new Hashtable<Chest,Integer>();
 	private HashSet<Player> setting										=	new HashSet<Player>();
 	private HashSet<Player> removeSetting								=	new HashSet<Player>();
 	private final String storeFileName									=	"stores";
@@ -74,7 +72,7 @@ public class RealStore extends JavaPlugin {
 	/**
 	 * Saves the current coffer list to a file
 	 */
-	private void saveCoffers(){
+	public void saveCoffers(){
 		File cofferFile		=	new File(getDataFolder(),cofferFileName);
 		if(cofferFile.exists())
 			cofferFile.delete();
@@ -109,7 +107,7 @@ public class RealStore extends JavaPlugin {
 	/**
 	 * Saves the current stores and prices to a file
 	 */
-	private void saveStores(){
+	public void saveStores(){
 		File storeFile		=	new File(getDataFolder(),storeFileName);
 
 		if(storeFile.exists())
@@ -128,28 +126,30 @@ public class RealStore extends JavaPlugin {
 		Iterator<Chest> citr		=	stores.keySet().iterator();
 		while(citr.hasNext()){
 			Chest chest				=	citr.next();
-			OfflinePlayer owner		=	stores.get(chest);
+			Store store				=	stores.get(chest);
+			OfflinePlayer owner		=	store.getOwner();
 			String world			=	chest.getWorld().getName();
 			//We must use an 'x' at the beginning of location or YAML will think it is a list entry (which would be bad)
 			String location			=	"x"+chest.getLocation().getBlockX()+"x"+chest.getLocation().getBlockY()+"x"+chest.getLocation().getBlockZ();
 			String player			=	owner.getName();
-			Integer defPrice		=	defaultPrices.contains(chest) ? defaultPrices.get(chest) : 1;
+			Integer defPrice		=	store.getDefaultPrice();
+			String type				=	store.getType().toString();
 			config.set("stores."+location+".world", world);
 			config.set("stores."+location+".player", player);
 			config.set("stores."+location+".default-price", defPrice);
-			if(prices.containsKey(chest)){
-				Iterator<MaterialData> pitr	=	prices.get(chest).keySet().iterator();
-				while(pitr.hasNext()){
-					MaterialData mdata	=	pitr.next();
-					Object price;
-					if(prices.get(chest).get(mdata) instanceof Integer){
-						price		=	prices.get(chest).get(mdata);
-					}else{
-						price		=	((ItemStack) prices.get(chest).get(mdata)).getTypeId()+"-"+((ItemStack) prices.get(chest).get(mdata)).getData()+((ItemStack) prices.get(chest).get(mdata)).getAmount();
-					}
-					String material		=	mdata.getItemTypeId()+"-"+mdata.getData();
-					config.set("stores."+location+".prices."+material, price);
-				}
+			config.set("stores."+location+".type", type);
+			
+			Iterator<MaterialData> pitr	=	store.getPrices().keySet().iterator();
+			while(pitr.hasNext()){
+				MaterialData mdata	=	pitr.next();
+				Object price;
+				if(store.getPrice(mdata) instanceof Integer)
+					price	=	store.getPrice(mdata);
+				else
+					price	=	((ItemStack) store.getPrice(mdata)).getTypeId()+"-"+mdata+"-"+((ItemStack) store.getPrice(mdata)).getAmount();
+				
+				String material		=	mdata.getItemTypeId()+"-"+mdata.getData();
+				config.set("stores."+location+".prices."+material, price);
 			}
 			
 		}
@@ -216,6 +216,7 @@ public class RealStore extends JavaPlugin {
 				World world				=	getServer().getWorld(wName);
 				String pName			=	config.getString("stores."+key+".player");
 				Integer defPrice		=	config.getInt("stores."+key+".default-price");
+				String type				=	config.getString("stores."+key+".type");
 				Location chestLoc		=	new Location(world,Double.parseDouble(key.split("x")[1]),Double.parseDouble(key.split("x")[2]),Double.parseDouble(key.split("x")[3]));
 				//The chest was somehow missing since we last loaded, don't add it
 				if(!(world.getBlockAt(chestLoc).getState() instanceof Chest))
@@ -232,6 +233,10 @@ public class RealStore extends JavaPlugin {
 					continue;
 				}
 				setDefaultPrice(player,chest,defPrice);
+				
+				if(type.equals("ADMIN"))
+					stores.get(chest).setAdmin();
+				
 				if(config.isConfigurationSection("stores."+key+".prices")){
 					Iterator<String> pitr	=	config.getConfigurationSection("stores."+key+".prices").getKeys(false).iterator();
 					while(pitr.hasNext()){
@@ -392,7 +397,7 @@ public class RealStore extends JavaPlugin {
 		if(isCoffer(chest))
 			return false;
 		
-		stores.put(chest, player);
+		stores.put(chest, new Store(this,player,chest));
 		saveStores();
 		return true;
 	}
@@ -409,7 +414,6 @@ public class RealStore extends JavaPlugin {
 		if(!isStore(chest))
 			return false;
 		
-		prices.remove(chest);
 		stores.remove(chest);
 		saveStores();
 		return true;
@@ -425,20 +429,9 @@ public class RealStore extends JavaPlugin {
 		if(chest==null)
 			return null;
 		
-		return stores.get(chest);
+		return stores.get(chest).getOwner();
 	}
 	
-	/**
-	 * Checks to see if the player has a store
-	 * 
-	 * @param player Player the player to check
-	 * @return boolean True if the player has a store, false otherwise
-	 */
-	public boolean hasStore(Player player){
-		if(player==null)
-			return false;
-		return stores.contains(player);
-	}
 	
 	/**
 	 * Checks to see if the specified Chest is a coffer
@@ -512,6 +505,18 @@ public class RealStore extends JavaPlugin {
 		return coffers.contains(player);
 	}
 	
+	public boolean hasStore(Player player){
+		if(player==null)
+			return false;
+		
+		Iterator<Chest>	itr	=	stores.keySet().iterator();
+		while(itr.hasNext()){
+			if(stores.get(itr.next()).getOwner().equals(player))
+				return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Gets the total number of coffers a player has setup
 	 * @param player Player the player who's coffers to check
@@ -566,11 +571,7 @@ public class RealStore extends JavaPlugin {
 		if(!getStoreOwner(chest).equals(player))
 			return false;
 		
-		if(prices.get(chest)==null){
-			prices.put(chest, new Hashtable<MaterialData,Object>());
-		}
-		
-		prices.get(chest).put(material, price);
+		stores.get(chest).setPrice(material, price);
 		saveStores();
 		return true;
 	}
@@ -583,10 +584,7 @@ public class RealStore extends JavaPlugin {
 		if(!getStoreOwner(chest).equals(player))
 			return false;
 		
-		if(prices.get(chest)==null){
-			prices.put(chest, new Hashtable<MaterialData,Object>());
-		}
-		prices.get(chest).put(material, trade);
+		stores.get(chest).setPrice(material, trade);
 		saveStores();
 		return true;
 	}
@@ -612,7 +610,7 @@ public class RealStore extends JavaPlugin {
 		if(!getStoreOwner(chest).equals(player))
 			return false;
 		
-		defaultPrices.put(chest, price);
+		stores.get(chest).setDefaultPrice(price);
 		saveStores();
 		return true;
 	}
@@ -628,17 +626,12 @@ public class RealStore extends JavaPlugin {
 		if(chest==null || data==null)
 			return null;
 		
-		if(prices.containsKey(chest) && prices.get(chest).containsKey(data)){
-			if(prices.get(chest).get(data) instanceof Integer){
-				return (Integer) prices.get(chest).get(data);
-			}else{
-				return 0;
-			}
-		}
-		if(defaultPrices.containsKey(chest))
-			return defaultPrices.get(chest);
+		Object price	=	stores.get(chest).getPrice(data);
 		
-		return 1;
+		if(price instanceof Integer)
+			return (Integer) price;
+		else
+			return 0;
 	}
 	
 	public Currency currencyManager(){
@@ -648,15 +641,13 @@ public class RealStore extends JavaPlugin {
 	public ItemStack getTrade(Chest chest,MaterialData data){
 		if(chest==null || data==null)
 			return null;
-		if(prices.containsKey(chest) && prices.get(chest).containsKey(data)){
-			if(prices.get(chest).get(data) instanceof Integer){
-				return null;
-			}else{
-				return (ItemStack) prices.get(chest).get(data);
-			}
-		}
 		
-		return null;
+		Object price = stores.get(chest).getPrice(data);
+		
+		if(price instanceof Integer)
+			return null;
+		else
+			return (ItemStack) price;
 	}
 	
 	/**
