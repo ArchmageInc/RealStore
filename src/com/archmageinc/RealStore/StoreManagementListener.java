@@ -12,6 +12,7 @@ public class StoreManagementListener implements Listener {
 	private RealStore plugin;
 	private Player owner;
 	private boolean remove	=	false;
+	private boolean admin	=	false;
 	
 	/**
 	 * Constructor to add a store
@@ -36,6 +37,22 @@ public class StoreManagementListener implements Listener {
 		plugin	=	instance;
 		owner	=	player;
 		remove	=	removal;
+		plugin.addSetting(player);
+	}
+	
+	/**
+	 * Full constructor
+	 * 
+	 * @param instance The main plugin
+	 * @param player The player we are listening for
+	 * @param removal True to remove a store, false to add a store
+	 * @param setAdmin True to set an admin store
+	 */
+	public StoreManagementListener(RealStore instance,Player player, boolean removal, boolean setAdmin){
+		plugin	=	instance;
+		owner	=	player;
+		remove	=	removal;
+		admin	=	setAdmin;
 		plugin.addSetting(player);
 	}
 	
@@ -76,7 +93,7 @@ public class StoreManagementListener implements Listener {
 		}
 		
 		//If we are removing it must be a store
-		if(!plugin.isStore(chest) && remove){
+		if((!plugin.isStore(chest) && remove) || (!plugin.isStore(chest) && admin)){
 			plugin.sendPlayerMessage(player,ChatColor.RED+"Error: "+ChatColor.WHITE+"That is not a store!");
 			return;
 		}
@@ -90,7 +107,7 @@ public class StoreManagementListener implements Listener {
 		/**
 		 * Chest Removal
 		 */
-		if(remove){
+		if(remove && !admin){
 			if(plugin.removeStore(chest))
 				plugin.sendPlayerMessage(owner, ChatColor.GREEN+"Your store has been removed from the chest.");
 			else
@@ -100,6 +117,29 @@ public class StoreManagementListener implements Listener {
 			unregister();
 			return;
 		}		
+		
+		/**
+		 * Chest Admin Create
+		 */
+		if(admin && !remove){
+			plugin.getStore(chest).setType(StoreType.ADMIN);
+			plugin.sendPlayerMessage(owner,ChatColor.GREEN+"The store has been set as an Admin store." );
+			plugin.removeSetting(owner);
+			unregister();
+			return;
+		}
+		
+		/**
+		 * Chest Admin remove
+		 */
+		
+		if(admin && remove){
+			plugin.getStore(chest).setType(StoreType.NORMAL);
+			plugin.sendPlayerMessage(owner,ChatColor.GREEN+"The store has been removed as an Admin store." );
+			plugin.removeSetting(owner);
+			unregister();
+			return;
+		}
 		
 		/**
 		 * Chest Adding

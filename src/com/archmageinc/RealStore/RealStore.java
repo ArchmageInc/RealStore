@@ -235,7 +235,7 @@ public class RealStore extends JavaPlugin {
 				setDefaultPrice(player,chest,defPrice);
 				
 				if(type.equals("ADMIN"))
-					stores.get(chest).setAdmin();
+					stores.get(chest).setType(StoreType.ADMIN);
 				
 				if(config.isConfigurationSection("stores."+key+".prices")){
 					Iterator<String> pitr	=	config.getConfigurationSection("stores."+key+".prices").getKeys(false).iterator();
@@ -735,5 +735,9 @@ public class RealStore extends JavaPlugin {
 			}
 		}
 		
+	}
+	
+	public Store getStore(Chest chest){
+		return stores.get(chest);
 	}
 }

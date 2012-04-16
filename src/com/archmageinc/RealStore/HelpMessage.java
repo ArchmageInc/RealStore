@@ -33,7 +33,9 @@ public class HelpMessage {
 					"|"+ChatColor.GOLD+"/rs store add"+ChatColor.WHITE+"       - Hit a chest to create a store" +
 					"|"+ChatColor.GOLD+"/rs store remove"+ChatColor.WHITE+"    - Hit a chest to remove a store" +
 					"|"+ChatColor.GOLD+"/rs price"+ChatColor.WHITE+"           - Set store prices"+
-					"|"+ChatColor.GOLD+"/rs help <command>"+ChatColor.WHITE+"  - Get more help on a command";
+					"|"+ChatColor.GOLD+"/rs help <command>"+ChatColor.WHITE+"  - Get more help on a command"+
+					"|"+ChatColor.GOLD+"/rs admin add"+ChatColor.WHITE+"       - Hit a store to make an admin store"+
+					"|"+ChatColor.GOLD+"/rs admin remove"+ChatColor.WHITE+"    - Hit store to remove an admin store";
 			return result;
 		}
 		
@@ -52,6 +54,11 @@ public class HelpMessage {
 					"|"+ChatColor.GOLD+"/rs price $$ default"+ChatColor.WHITE+" - Hit a store to set the default price";
 		}
 		
+		if(command.equals("admin")){
+			result	=	ChatColor.GOLD+"/rs admin add"+ChatColor.WHITE+"     - Hit a store to create an admin store"+
+					"|"+ChatColor.GOLD+"/rs admin remove"+ChatColor.WHITE+"  - Hit a store to remove an admin store";
+		}
+
 		if(command.equals("material")){
 			result	=	"Not yet implemented. See a wikki somewhere for material types.";
 		}

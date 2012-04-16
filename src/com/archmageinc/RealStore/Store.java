@@ -27,9 +27,11 @@ public class Store {
 	
 	/**
 	 * Sets the store type to an admin store
+	 * 
+	 * @param storeType The type of store to set it to
 	 */
-	public void setAdmin(){
-		type	=	StoreType.ADMIN;
+	public void setType(StoreType storeType){
+		type	=	storeType;
 	}
 	
 	/**

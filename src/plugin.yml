@@ -12,13 +12,17 @@ commands:
 permissions:
   RealStore.*:
     description: Allows a player all access to RealStore interactions
-    default: true
+    default: false
     children:
       RealStore.stores: true
       RealStore.trade: true
+      RealStore.admin: true
   RealStore.stores:
     description: Allows a player to create coffers and stores
     default: true
   RealStore.trade:
     description: Allows a player to setup trade goods
     default: true
+  RealStore.admin:
+    description: Allows a player to create admin stores
+    default: false

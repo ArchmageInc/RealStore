@@ -181,7 +181,46 @@ public class RSExecutor implements CommandExecutor {
 					return true;
 				}
 			}
-			
+
+/**************************************************************
+ * Setting Admin stores
+ **************************************************************/
+			if(rsCommand.equals("admin")){
+				if(!player.hasPermission("RealStore.admin")){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+"You do not have permission to set admin stores.");
+					return true;
+				}
+				if(args.length<2){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" Are you creating or removing an admin store?");
+					return true;
+				}
+				
+				if(!plugin.hasStore(player)){
+					plugin.sendPlayerMessage(player, ChatColor.DARK_RED+"Error: "+ChatColor.WHITE+" You do not have any stores to make admin stores.");
+					return true;
+				}
+				
+				String adminCommand	=	args[1].toLowerCase();
+				
+				/************************
+				 * Adding an admin store
+				 ***********************/
+				if(adminCommand.equals("add")){
+					plugin.getServer().getPluginManager().registerEvents(new StoreManagementListener(plugin,player,false,true), plugin);
+					plugin.sendPlayerMessage(player, "Click on a store to add it as an admin store.");
+					return true;
+				}
+				
+				/***********************
+				 * Removing an admin store
+				 ***********************/
+				if(adminCommand.equals("remove")){
+					plugin.getServer().getPluginManager().registerEvents(new StoreManagementListener(plugin,player,true,true), plugin);
+					plugin.sendPlayerMessage(player, "Click on a store to remove it as an admin store.");
+					return true;
+				}
+			}
+							
 /********************************************************
  * Setting Coffers
  *******************************************************/
